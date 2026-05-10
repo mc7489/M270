@@ -1,0 +1,3260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fireware Web UI — Firebox M270 (Simulator)</title>
+<style>
+  /* ======================== BASE ======================== */
+  :root {
+    --wg-red: #c8102e;
+    --wg-red-dark: #a00d24;
+    --wg-red-light: #e63950;
+    --nav-bg: #2c3038;
+    --nav-bg-hover: #3a3f49;
+    --nav-bg-active: #1f2329;
+    --nav-text: #d4d6db;
+    --nav-text-active: #ffffff;
+    --nav-border: #1a1d22;
+    --header-bg: #ffffff;
+    --header-border: #d8d8d8;
+    --content-bg: #f4f5f7;
+    --panel-bg: #ffffff;
+    --border: #d0d4d9;
+    --border-light: #e4e7eb;
+    --text-1: #2a2e35;
+    --text-2: #5a6068;
+    --text-3: #8a8f96;
+    --link: #1456a0;
+    --link-hover: #0d3d75;
+    --success: #2d8a48;
+    --warning: #c98a2b;
+    --danger: #c8102e;
+    --info: #1976d2;
+    --table-stripe: #f7f8fa;
+    --table-hover: #eef3f8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    font-size: 13px;
+    color: var(--text-1);
+    background: var(--content-bg);
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body { display: flex; flex-direction: column; }
+
+  /* TOP HEADER */
+  .topbar {
+    display: flex;
+    align-items: center;
+    background: var(--header-bg);
+    border-bottom: 3px solid var(--wg-red);
+    height: 52px;
+    padding: 0 16px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    z-index: 10;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--wg-red); font-size: 18px; letter-spacing: -0.02em; }
+  .logo-mark { width: 32px; height: 32px; background: var(--wg-red); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; border-radius: 4px; }
+  .logo-text { line-height: 1.1; }
+  .logo-text small { display: block; font-size: 10px; color: var(--text-2); font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; }
+  .topbar-info { margin-left: 32px; display: flex; align-items: center; gap: 24px; color: var(--text-2); font-size: 12px; }
+  .topbar-info-item { display: flex; flex-direction: column; gap: 1px; }
+  .topbar-info-item .label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .topbar-info-item .val { color: var(--text-1); font-weight: 500; font-size: 12px; }
+  .topbar-spacer { flex: 1; }
+  .topbar-user { display: flex; align-items: center; gap: 10px; color: var(--text-1); font-size: 12px; }
+  .topbar-user .avatar { width: 28px; height: 28px; background: var(--wg-red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
+  .topbar-user .role { color: var(--text-3); font-size: 11px; }
+  .topbar-banner { background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 3px; font-size: 11px; border: 1px solid #ffeaa7; margin-right: 12px; }
+
+  /* LAYOUT */
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width: 240px; background: var(--nav-bg); color: var(--nav-text); overflow-y: auto; flex-shrink: 0; border-right: 1px solid var(--nav-border); }
+  .nav-group { border-bottom: 1px solid var(--nav-border); }
+  .nav-group-header { padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--nav-text); background: var(--nav-bg); cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+  .nav-group-header:hover { background: var(--nav-bg-hover); }
+  .nav-group-header .chevron { font-size: 10px; transition: transform 0.2s; color: var(--text-3); }
+  .nav-group.collapsed .chevron { transform: rotate(-90deg); }
+  .nav-group.collapsed .nav-items { display: none; }
+  .nav-items { padding: 2px 0 6px; }
+  .nav-item { display: block; padding: 6px 14px 6px 28px; color: var(--nav-text); text-decoration: none; font-size: 12.5px; cursor: pointer; border-left: 3px solid transparent; transition: background 0.1s; }
+  .nav-item:hover { background: var(--nav-bg-hover); color: var(--nav-text-active); }
+  .nav-item.active { background: var(--nav-bg-active); color: var(--nav-text-active); border-left-color: var(--wg-red); font-weight: 500; }
+
+  /* MAIN */
+  .main { flex: 1; overflow-y: auto; background: var(--content-bg); }
+  .breadcrumb { padding: 10px 20px; background: var(--header-bg); border-bottom: 1px solid var(--header-border); font-size: 12px; color: var(--text-2); }
+  .breadcrumb a { color: var(--link); text-decoration: none; cursor: pointer; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { margin: 0 6px; color: var(--text-3); }
+  .breadcrumb .current { color: var(--text-1); font-weight: 500; }
+  .page { padding: 20px; }
+  .page-title { font-size: 20px; font-weight: 600; color: var(--text-1); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+  .page-title .actions { display: flex; gap: 8px; }
+  .page-subtitle { color: var(--text-2); font-size: 13px; margin-bottom: 18px; }
+
+  /* PANELS */
+  .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 16px; }
+  .panel-header { padding: 10px 16px; background: linear-gradient(to bottom, #fafbfc, #f0f2f4); border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text-1); display: flex; justify-content: space-between; align-items: center; border-radius: 4px 4px 0 0; }
+  .panel-body { padding: 16px; }
+  .panel-body.flush { padding: 0; }
+
+  /* TABS */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--panel-bg); margin-bottom: 16px; overflow-x: auto; }
+  .tab { padding: 10px 18px; background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 13px; color: var(--text-2); font-family: inherit; white-space: nowrap; transition: all 0.15s; }
+  .tab:hover { color: var(--text-1); background: var(--table-stripe); }
+  .tab.active { color: var(--wg-red); border-bottom-color: var(--wg-red); font-weight: 600; }
+
+  /* TABLE */
+  table.data { width: 100%; border-collapse: collapse; background: var(--panel-bg); font-size: 12.5px; }
+  table.data thead th { background: linear-gradient(to bottom, #fafbfc, #eef0f2); padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border-light); font-weight: 600; color: var(--text-1); font-size: 12px; white-space: nowrap; }
+  table.data thead th:last-child { border-right: none; }
+  table.data tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border-light); color: var(--text-1); vertical-align: middle; }
+  table.data tbody td:last-child { border-right: none; }
+  table.data tbody tr:nth-child(even) { background: var(--table-stripe); }
+  table.data tbody tr:hover { background: var(--table-hover); }
+  table.data .actions-cell { white-space: nowrap; }
+  table.data .actions-cell a { color: var(--link); cursor: pointer; margin-right: 10px; text-decoration: none; font-size: 12px; }
+  table.data .actions-cell a:hover { text-decoration: underline; }
+  table.data .actions-cell a.danger { color: var(--danger); }
+
+  /* FORMS */
+  .form-row { display: grid; grid-template-columns: 200px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .form-row.tall { align-items: start; }
+  .form-row label { font-weight: 500; color: var(--text-1); font-size: 12.5px; text-align: right; }
+  .form-row .help { grid-column: 2; font-size: 11.5px; color: var(--text-3); margin-top: 4px; }
+  input[type="text"], input[type="number"], input[type="password"], input[type="email"], select, textarea {
+    padding: 6px 9px; border: 1px solid var(--border); border-radius: 3px; font-size: 13px; font-family: inherit; background: white; color: var(--text-1); width: 100%; max-width: 360px;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:focus, input[type="email"]:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--wg-red); box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.12);
+  }
+  textarea { resize: vertical; min-height: 80px; max-width: 500px; }
+  input[type="checkbox"], input[type="radio"] { cursor: pointer; accent-color: var(--wg-red); }
+  .checkbox-row { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .checkbox-row label { cursor: pointer; font-weight: normal; text-align: left; }
+  .radio-group { display: flex; flex-direction: column; gap: 6px; }
+  .radio-group .radio-row { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .radio-group .radio-row label { cursor: pointer; font-weight: normal; text-align: left; }
+
+  /* BUTTONS */
+  .btn { padding: 6px 14px; border: 1px solid var(--border); background: linear-gradient(to bottom, #fff, #f0f2f4); color: var(--text-1); border-radius: 3px; font-size: 12.5px; font-family: inherit; cursor: pointer; font-weight: 500; }
+  .btn:hover { background: linear-gradient(to bottom, #fff, #e4e7eb); border-color: var(--text-3); }
+  .btn:active { background: #e4e7eb; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.primary { background: linear-gradient(to bottom, var(--wg-red), var(--wg-red-dark)); color: white; border-color: var(--wg-red-dark); }
+  .btn.primary:hover { background: linear-gradient(to bottom, var(--wg-red-light), var(--wg-red)); }
+  .btn.danger { background: linear-gradient(to bottom, #fff, #fce8eb); color: var(--danger); border-color: #f0a8b1; }
+  .btn.sm { padding: 3px 9px; font-size: 11.5px; }
+  .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* PILLS */
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 11px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .pill.up { background: #e1f4e7; color: var(--success); }
+  .pill.down { background: #fce8eb; color: var(--danger); }
+  .pill.warn { background: #fdf2dd; color: var(--warning); }
+  .pill.info { background: #e3f0fb; color: var(--info); }
+  .pill.disabled { background: #ececec; color: var(--text-3); }
+
+  /* ZONE BADGES */
+  .zone-badge { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+  .zone-External { background: #fce8eb; color: var(--wg-red); }
+  .zone-Trusted { background: #e1f4e7; color: var(--success); }
+  .zone-Optional { background: #fdf2dd; color: var(--warning); }
+  .zone-Custom { background: #e3f0fb; color: var(--info); }
+  .zone-VLAN { background: #ede4f7; color: #7048b6; }
+  .zone-Disabled { background: #ececec; color: var(--text-3); }
+
+  /* DASHBOARD */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .stat-card { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 4px; padding: 16px; border-left: 4px solid var(--wg-red); }
+  .stat-card .stat-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .stat-card .stat-value { font-size: 28px; font-weight: 600; color: var(--text-1); line-height: 1; }
+  .stat-card .stat-sub { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+
+  /* PORT VISUAL */
+  .port-bank { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; background: linear-gradient(to bottom, #1a1d22, #0d0f12); padding: 16px; border-radius: 4px; border: 1px solid #000; max-width: 600px; }
+  .port { aspect-ratio: 1; background: #0a0b0d; border: 1px solid #2c3038; border-radius: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #d4d6db; font-size: 10px; cursor: pointer; position: relative; }
+  .port:hover { border-color: var(--wg-red); }
+  .port .port-num { font-weight: 700; font-size: 14px; }
+  .port .port-led { width: 6px; height: 6px; border-radius: 50%; background: #444; position: absolute; top: 4px; right: 4px; }
+  .port.up .port-led { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+  .port.disabled .port-led { background: #444; }
+  .port .port-zone { font-size: 8px; text-transform: uppercase; letter-spacing: 0.06em; color: #8a8f96; margin-top: 2px; }
+  .port.up .port-zone { color: #d4d6db; }
+
+  /* ALERTS */
+  .alert { padding: 10px 14px; border-radius: 4px; margin-bottom: 14px; border-left: 4px solid; font-size: 12.5px; }
+  .alert.info { background: #e3f0fb; border-left-color: var(--info); color: #0a3a6b; }
+  .alert.success { background: #e1f4e7; border-left-color: var(--success); color: #1a5a30; }
+  .alert.warn { background: #fdf2dd; border-left-color: var(--warning); color: #7a531a; }
+  .alert.danger { background: #fce8eb; border-left-color: var(--danger); color: #8a0a1f; }
+
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text-1); color: white; padding: 12px 18px; border-radius: 4px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); font-size: 13px; z-index: 1000; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* MODAL */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-start; justify-content: center; padding-top: 60px; z-index: 100; }
+  .modal { background: white; border-radius: 4px; width: 90%; max-width: 720px; max-height: calc(100vh - 100px); display: flex; flex-direction: column; box-shadow: 0 12px 48px rgba(0,0,0,0.3); }
+  .modal-header { padding: 14px 18px; background: linear-gradient(to bottom, #fafbfc, #f0f2f4); border-bottom: 1px solid var(--border); font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px 4px 0 0; }
+  .modal-body { padding: 18px; overflow-y: auto; flex: 1; }
+  .modal-footer { padding: 12px 18px; background: #f7f8fa; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; border-radius: 0 0 4px 4px; }
+  .modal-close { background: none; border: none; color: var(--text-3); font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; line-height: 1; }
+  .modal-close:hover { color: var(--text-1); }
+
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .dot.green { background: var(--success); box-shadow: 0 0 4px var(--success); }
+  .dot.red { background: var(--danger); }
+  .dot.gray { background: var(--text-3); }
+  .dot.amber { background: var(--warning); }
+
+  .mono { font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; }
+  .text-muted { color: var(--text-2); }
+  .text-small { font-size: 11.5px; }
+  .text-bold { font-weight: 600; }
+  .text-center { text-align: center; }
+  .mt-8 { margin-top: 8px; } .mt-16 { margin-top: 16px; }
+  .mb-8 { margin-bottom: 8px; } .mb-16 { margin-bottom: 16px; }
+  .flex { display: flex; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .flex-end { display: flex; justify-content: flex-end; gap: 8px; }
+  .hidden { display: none !important; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--content-bg); }
+  ::-webkit-scrollbar-thumb { background: #c0c4ca; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+  .sidebar::-webkit-scrollbar-track { background: var(--nav-bg); }
+  .sidebar::-webkit-scrollbar-thumb { background: #4a4f59; }
+
+  @media (max-width: 900px) {
+    .sidebar { width: 200px; }
+    .form-row { grid-template-columns: 1fr; }
+    .form-row label { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-mark">W</div>
+    <div class="logo-text">WatchGuard<small>Fireware Web UI</small></div>
+  </div>
+  <div class="topbar-info">
+    <div class="topbar-info-item"><span class="label">Hostname</span><span class="val" id="tb-hostname">firebox-m270</span></div>
+    <div class="topbar-info-item"><span class="label">Model</span><span class="val">M270</span></div>
+    <div class="topbar-info-item"><span class="label">Fireware</span><span class="val">v12.10.4 B697224</span></div>
+    <div class="topbar-info-item"><span class="label">Status</span><span class="val"><span class="dot green"></span>Connected</span></div>
+  </div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-banner">⚡ SIMULATOR — practice mode, not a live device</div>
+  <div class="topbar-user">
+    <div class="avatar">A</div>
+    <div><div>admin</div><div class="role">Device Administrator</div></div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main class="main">
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="page" id="page"></div>
+  </main>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script>
+// ========================================================================
+// DEFAULT STATE — mirrors an out-of-the-box M270
+// ========================================================================
+const DEFAULT_STATE = {
+  system: {
+    hostname: 'firebox-m270', model: 'M270', serial: '70BX0123456789',
+    firmware: '12.10.4 B697224', fireware: '12.10.4', build: 'B697224',
+    location: 'Headquarters', contact: 'admin@example.com',
+    timeZone: '(UTC-06:00) Central Time (US & Canada)',
+    timezone: 'America/Chicago',
+    uptime: '14 days, 7:23:11', cpu: 8, memory: 22
+  },
+  featureKey: {
+    type: 'Total Security Suite',
+    licenseType: 'Total Security Suite',
+    activated: '2025-01-15',
+    expires: '2026-12-31',
+    seats: 'Unlimited',
+    activationCode: 'ABCD-EFGH-IJKL-MNOP',
+    services: {
+      'Application Control': true, 'APT Blocker': true, 'Botnet Detection': true,
+      'Data Loss Prevention': true, 'DNSWatch': true, 'Gateway AntiVirus': true,
+      'Geolocation': true, 'IntelligentAV': true, 'Intrusion Prevention Service': true,
+      'Reputation Enabled Defense': true, 'spamBlocker': true, 'WebBlocker': true,
+      'ThreatSync': true, 'Mobile VPN with SSL': true, 'Branch Office VPN': 'Unlimited',
+      'Authenticated Users': 'Unlimited', 'VLAN': '75 Max'
+    },
+    features: [
+      { name: 'Application Control', status: 'Active', expires: '2026-12-31' },
+      { name: 'APT Blocker', status: 'Active', expires: '2026-12-31' },
+      { name: 'Botnet Detection', status: 'Active', expires: '2026-12-31' },
+      { name: 'Data Loss Prevention', status: 'Active', expires: '2026-12-31' },
+      { name: 'DNSWatch', status: 'Active', expires: '2026-12-31' },
+      { name: 'Gateway AntiVirus', status: 'Active', expires: '2026-12-31' },
+      { name: 'Geolocation', status: 'Active', expires: '2026-12-31' },
+      { name: 'IntelligentAV', status: 'Active', expires: '2026-12-31' },
+      { name: 'Intrusion Prevention Service', status: 'Active', expires: '2026-12-31' },
+      { name: 'Reputation Enabled Defense', status: 'Active', expires: '2026-12-31' },
+      { name: 'spamBlocker', status: 'Active', expires: '2026-12-31' },
+      { name: 'WebBlocker', status: 'Active', expires: '2026-12-31' },
+      { name: 'ThreatSync', status: 'Active', expires: '2026-12-31' },
+      { name: 'Mobile VPN with SSL', status: 'Active', expires: 'Perpetual' },
+      { name: 'Branch Office VPN (Unlimited)', status: 'Active', expires: 'Perpetual' }
+    ]
+  },
+  interfaces: [
+    { id: 0, name: 'External', zone: 'External', enabled: true, method: 'static', ip: '203.0.113.10', mask: '24', gateway: '203.0.113.1', mac: '00:90:7F:01:23:45', mtu: 1500, link: '1000Mbps Full', dhcpServer: false, dhcpStart: '', dhcpEnd: '' },
+    { id: 1, name: 'Trusted', zone: 'Trusted', enabled: true, method: 'static', ip: '10.0.1.1', mask: '24', gateway: '', mac: '00:90:7F:01:23:46', mtu: 1500, link: '1000Mbps Full', dhcpServer: true, dhcpStart: '10.0.1.10', dhcpEnd: '10.0.1.200' },
+    { id: 2, name: 'Optional-1', zone: 'Optional', enabled: true, method: 'static', ip: '10.0.2.1', mask: '24', gateway: '', mac: '00:90:7F:01:23:47', mtu: 1500, link: '1000Mbps Full', dhcpServer: true, dhcpStart: '10.0.2.10', dhcpEnd: '10.0.2.200' },
+    { id: 3, name: 'Eth3', zone: 'Disabled', enabled: false, method: 'static', ip: '', mask: '24', gateway: '', mac: '00:90:7F:01:23:48', mtu: 1500, link: 'Down', dhcpServer: false, dhcpStart: '', dhcpEnd: '' },
+    { id: 4, name: 'Eth4', zone: 'Disabled', enabled: false, method: 'static', ip: '', mask: '24', gateway: '', mac: '00:90:7F:01:23:49', mtu: 1500, link: 'Down', dhcpServer: false, dhcpStart: '', dhcpEnd: '' },
+    { id: 5, name: 'Eth5', zone: 'Disabled', enabled: false, method: 'static', ip: '', mask: '24', gateway: '', mac: '00:90:7F:01:23:4A', mtu: 1500, link: 'Down', dhcpServer: false, dhcpStart: '', dhcpEnd: '' },
+    { id: 6, name: 'Eth6', zone: 'Disabled', enabled: false, method: 'static', ip: '', mask: '24', gateway: '', mac: '00:90:7F:01:23:4B', mtu: 1500, link: 'Down', dhcpServer: false, dhcpStart: '', dhcpEnd: '' },
+    { id: 7, name: 'Eth7', zone: 'Disabled', enabled: false, method: 'static', ip: '', mask: '24', gateway: '', mac: '00:90:7F:01:23:4C', mtu: 1500, link: 'Down', dhcpServer: false, dhcpStart: '', dhcpEnd: '' }
+  ],
+  vlans: [],
+  multiWan: { method: 'failover', stickyConnections: true, stickyTimeout: 3 },
+  routes: [
+    { id: 1, dest: '0.0.0.0/0', gateway: '203.0.113.1', metric: 1, interface: 'External', type: 'Default', enabled: true },
+    { id: 2, dest: '10.10.50.0/24', gateway: '10.0.1.250', metric: 5, interface: 'Trusted', type: 'Static', enabled: true }
+  ],
+  dns: { servers: ['8.8.8.8', '1.1.1.1'], domain: 'example.local' },
+  policies: [
+    { id: 1, name: 'FTP', type: 'packet-filter', proto: 'TCP/21', from: ['Any-Trusted'], to: ['Any-External'], action: 'Allow', enabled: true, schedule: 'Always On', logging: true, autoOrder: 1 },
+    { id: 2, name: 'HTTP-proxy', type: 'proxy', proto: 'TCP/80', from: ['Any-Trusted', 'Any-Optional'], to: ['Any-External'], action: 'Allow', enabled: true, schedule: 'Always On', logging: true, autoOrder: 2 },
+    { id: 3, name: 'HTTPS-proxy', type: 'proxy', proto: 'TCP/443', from: ['Any-Trusted', 'Any-Optional'], to: ['Any-External'], action: 'Allow', enabled: true, schedule: 'Always On', logging: true, autoOrder: 3 },
+    { id: 4, name: 'DNS', type: 'proxy', proto: 'UDP/53', from: ['Any-Trusted', 'Any-Optional'], to: ['Any-External'], action: 'Allow', enabled: true, schedule: 'Always On', logging: false, autoOrder: 4 },
+    { id: 5, name: 'Outgoing', type: 'packet-filter', proto: 'TCP-UDP/Any', from: ['Any-Trusted', 'Any-Optional'], to: ['Any-External'], action: 'Allow', enabled: true, schedule: 'Always On', logging: false, autoOrder: 99 },
+    { id: 6, name: 'WatchGuard', type: 'packet-filter', proto: 'Multiple', from: ['Any-Trusted', 'Any-Optional'], to: ['Firebox'], action: 'Allow', enabled: true, schedule: 'Always On', logging: false, autoOrder: 5 },
+    { id: 7, name: 'Ping', type: 'packet-filter', proto: 'ICMP/Any', from: ['Any-Trusted'], to: ['Any-External', 'Any-Optional'], action: 'Allow', enabled: true, schedule: 'Always On', logging: false, autoOrder: 6 },
+    { id: 8, name: 'WatchGuard Web UI', type: 'packet-filter', proto: 'TCP/8080', from: ['Any-Trusted'], to: ['Firebox'], action: 'Allow', enabled: true, schedule: 'Always On', logging: false, autoOrder: 7 }
+  ],
+  policyOrder: 'auto',
+  aliases: [
+    { name: 'Any', members: ['Any'], readonly: true, desc: 'Any source or destination' },
+    { name: 'Any-External', members: ['External'], readonly: true, desc: 'Any External-zone interface' },
+    { name: 'Any-Trusted', members: ['Trusted'], readonly: true, desc: 'Any Trusted-zone interface' },
+    { name: 'Any-Optional', members: ['Optional'], readonly: true, desc: 'Any Optional-zone interface' },
+    { name: 'Any-BOVPN', members: ['BOVPN tunnels'], readonly: true, desc: 'Any active BOVPN tunnel' },
+    { name: 'Firebox', members: ['Firebox itself'], readonly: true, desc: 'The Firebox itself' }
+  ],
+  schedules: [
+    { name: 'Always On', desc: 'Always active', readonly: true },
+    { name: 'Business Hours', desc: 'Mon-Fri 8:00-18:00', readonly: false }
+  ],
+  snat: [],
+  natDynamic: [
+    { id: 1, from: 'Any-Trusted', to: 'Any-External', enabled: true },
+    { id: 2, from: 'Any-Optional', to: 'Any-External', enabled: true }
+  ],
+  nat1to1: [],
+  authServers: [
+    { id: 1, type: 'Firebox-DB', name: 'Firebox-DB', enabled: true, primary: 'local', secondary: '', readonly: true, sharedSecret: '', searchBase: '', port: '' }
+  ],
+  authUsers: [
+    { name: 'admin', fullName: 'Device Administrator', group: 'Device Administrators', enabled: true, readonly: true },
+    { name: 'status', fullName: 'Device Monitor', group: 'Device Monitors', enabled: true, readonly: true }
+  ],
+  authGroups: [
+    { name: 'Device Administrators', desc: 'Full management access', readonly: true },
+    { name: 'Device Monitors', desc: 'Read-only monitoring', readonly: true }
+  ],
+  sso: { enabled: false, agentIp: '', adDomain: '', useElm: true, useSsoClient: false, sharedSecret: '' },
+  bovpnGateways: [],
+  bovpnTunnels: [],
+  mobileVpn: {
+    ssl: { enabled: false, primaryIp: '', port: 443, protocol: 'TCP', authServer: 'Firebox-DB', virtualPool: '192.168.113.0/24', forceAllTraffic: true, dns: '8.8.8.8' },
+    ikev2: { enabled: false, primaryIp: '', authServer: 'Firebox-DB', virtualPool: '192.168.114.0/24', dns: '8.8.8.8' },
+    ipsec: { enabled: false, virtualPool: '192.168.115.0/24', psk: '', authServer: 'Firebox-DB' },
+    l2tp: { enabled: false, virtualPool: '192.168.116.0/24', psk: '', authServer: 'Firebox-DB' }
+  },
+  services: {
+    gav: { enabled: true, signatures: '5,247,108', lastUpdate: '2026-05-09 02:14', action: 'Drop', alarm: true, scanLimit: 10 },
+    iav: { enabled: true, lastUpdate: '2026-05-09 02:14', action: 'Drop' },
+    apt: { enabled: true, mode: 'Cloud Sandbox', action: 'Drop', sensitivity: 'Medium' },
+    ips: { enabled: true, signatures: '20,184', lastUpdate: '2026-05-09 02:14', sensitivity: 'High', criticalAction: 'Drop', highAction: 'Drop', medAction: 'Drop', lowAction: 'Allow' },
+    webblocker: { enabled: true, profile: 'Default-Profile', engine: 'Cloud', categories: 130 },
+    appcontrol: { enabled: true, signatures: '1,847', mode: 'Block by Category' },
+    spamblocker: { enabled: true, action: 'Quarantine', confidence: 'Medium' },
+    red: { enabled: true, threshold: 'Default' },
+    botnet: { enabled: true, action: 'Drop', alarm: true },
+    geo: { enabled: true, blockedCountries: ['CN', 'RU', 'KP', 'IR'] },
+    dlp: { enabled: false, sensors: 0 },
+    dnswatch: { enabled: true, contentCategories: ['Malware', 'Phishing', 'Cryptomining'] }
+  },
+  defaultThreat: { spoofingAttacks: true, ipSourceRoute: true, pingOfDeath: true, smurf: true, ipBasedDoS: true, portScan: true, distDoS: true, sessionLimit: true },
+  logging: {
+    wgLogServer: { enabled: false, ip: '', key: '' },
+    syslog: { enabled: false, ip: '', port: 514, protocol: 'UDP', format: 'Syslog' },
+    cloud: { enabled: false, accountId: '' },
+    logLevel: 'Information',
+    perfStats: false,
+    syslogServer: '', syslogPort: 514, cloudLogging: false, logServers: []
+  },
+  ntp: { enabled: true, servers: ['time.watchguard.com', 'pool.ntp.org'] },
+  snmp: {
+    enabled: false, version: 'v2c', community: '', port: 161,
+    v3User: '', v3Auth: 'SHA-256', v3AuthPass: '', v3Priv: 'AES-128', v3PrivPass: '',
+    trapReceiver: ''
+  },
+  globalSettings: {
+    webUiPort: 8080, sshPort: 4118, sessionTimeout: 60, idleTimeout: 30, deviceFeedback: true,
+    sessionIdle: 30, sessionMax: 8,
+    sshEnabled: true,
+    icmpTrusted: true, icmpExternal: false,
+    tcpMtu: 1500, tcpSynChecking: true, pathMtuDiscovery: true,
+    autoReboot: false, autoRebootSchedule: 'Sunday 03:00'
+  }
+};
+
+let state;
+const STORAGE_KEY = 'fwm270-sim-v1';
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      state = JSON.parse(saved);
+      state = mergeDeep(deepClone(DEFAULT_STATE), state);
+      return;
+    }
+  } catch(e) { console.warn(e); }
+  state = deepClone(DEFAULT_STATE);
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) { console.warn(e); }
+}
+
+function resetState() {
+  confirmDialog('Reset all settings to factory defaults? This wipes your simulator config.', () => {
+    localStorage.removeItem(STORAGE_KEY);
+    state = deepClone(DEFAULT_STATE);
+    saveState();
+    location.hash = '#dashboard/front-panel';
+    renderApp();
+    toast('Factory defaults restored');
+  });
+}
+
+function deepClone(obj) {
+  if (typeof structuredClone === 'function') return structuredClone(obj);
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function mergeDeep(target, source) {
+  for (const k of Object.keys(source)) {
+    if (source[k] && typeof source[k] === 'object' && !Array.isArray(source[k])) {
+      target[k] = mergeDeep(target[k] || {}, source[k]);
+    } else { target[k] = source[k]; }
+  }
+  return target;
+}
+
+// ========================================================================
+// NAVIGATION
+// ========================================================================
+const NAV = [
+  { group: 'Dashboard', items: [
+    { id: 'dashboard/front-panel', label: 'Front Panel' },
+    { id: 'dashboard/subscription-services', label: 'Subscription Services' },
+    { id: 'dashboard/firewatch', label: 'FireWatch' },
+    { id: 'dashboard/interfaces', label: 'Interfaces' },
+    { id: 'dashboard/traffic-monitor', label: 'Traffic Monitor' },
+    { id: 'dashboard/bandwidth', label: 'Bandwidth Meter' }
+  ]},
+  { group: 'System Status', items: [
+    { id: 'status/status-report', label: 'Status Report' },
+    { id: 'status/license', label: 'License' },
+    { id: 'status/connections', label: 'Connections' },
+    { id: 'status/auth-list', label: 'Authentication List' },
+    { id: 'status/blocked-sites', label: 'Blocked Sites' },
+    { id: 'status/cpu', label: 'CPU & Memory' },
+    { id: 'status/dhcp-leases', label: 'DHCP Leases' },
+    { id: 'status/routes', label: 'Routes' },
+    { id: 'status/arp', label: 'ARP Table' },
+    { id: 'status/vpn-stats', label: 'VPN Statistics' }
+  ]},
+  { group: 'Network', items: [
+    { id: 'network/interfaces', label: 'Interfaces' },
+    { id: 'network/vlan', label: 'VLAN' },
+    { id: 'network/bridge', label: 'Bridge' },
+    { id: 'network/link-agg', label: 'Link Aggregation' },
+    { id: 'network/multi-wan', label: 'Multi-WAN' },
+    { id: 'network/routes', label: 'Routes' },
+    { id: 'network/dynamic-routing', label: 'Dynamic Routing' },
+    { id: 'network/nat', label: 'NAT' },
+    { id: 'network/wins-dns', label: 'WINS/DNS' },
+    { id: 'network/dyn-dns', label: 'Dynamic DNS' }
+  ]},
+  { group: 'Firewall', items: [
+    { id: 'firewall/policies', label: 'Firewall Policies' },
+    { id: 'firewall/snat', label: 'SNAT' },
+    { id: 'firewall/aliases', label: 'Aliases' },
+    { id: 'firewall/schedules', label: 'Schedules' },
+    { id: 'firewall/proxy-actions', label: 'Proxy Actions' },
+    { id: 'firewall/quotas', label: 'Quotas' }
+  ]},
+  { group: 'Subscription Services', items: [
+    { id: 'services/overview', label: 'Overview' },
+    { id: 'services/gav', label: 'Gateway AntiVirus' },
+    { id: 'services/iav', label: 'IntelligentAV' },
+    { id: 'services/apt', label: 'APT Blocker' },
+    { id: 'services/ips', label: 'Intrusion Prevention' },
+    { id: 'services/webblocker', label: 'WebBlocker' },
+    { id: 'services/appcontrol', label: 'Application Control' },
+    { id: 'services/spamblocker', label: 'spamBlocker' },
+    { id: 'services/red', label: 'Reputation Enabled Defense' },
+    { id: 'services/botnet', label: 'Botnet Detection' },
+    { id: 'services/geo', label: 'Geolocation' },
+    { id: 'services/dlp', label: 'Data Loss Prevention' },
+    { id: 'services/dnswatch', label: 'DNSWatch' },
+    { id: 'services/default-threat', label: 'Default Threat Protection' }
+  ]},
+  { group: 'Authentication', items: [
+    { id: 'auth/servers', label: 'Servers' },
+    { id: 'auth/users-groups', label: 'Authorized Users and Groups' },
+    { id: 'auth/sso', label: 'Single Sign-On' },
+    { id: 'auth/terminal-services', label: 'Terminal Services' },
+    { id: 'auth/settings', label: 'Settings' },
+    { id: 'auth/hotspot', label: 'Hotspot' }
+  ]},
+  { group: 'VPN', items: [
+    { id: 'vpn/bovpn', label: 'Branch Office VPN' },
+    { id: 'vpn/mobile-ssl', label: 'Mobile VPN with SSL' },
+    { id: 'vpn/mobile-ikev2', label: 'Mobile VPN with IKEv2' },
+    { id: 'vpn/mobile-ipsec', label: 'Mobile VPN with IPSec' },
+    { id: 'vpn/mobile-l2tp', label: 'Mobile VPN with L2TP' }
+  ]},
+  { group: 'System', items: [
+    { id: 'system/info', label: 'Device Information' },
+    { id: 'system/feature-key', label: 'Feature Key' },
+    { id: 'system/configuration', label: 'Configuration File' },
+    { id: 'system/backup', label: 'Backup Image' },
+    { id: 'system/upgrade', label: 'Upgrade OS' },
+    { id: 'system/logging', label: 'Logging' },
+    { id: 'system/ntp', label: 'NTP' },
+    { id: 'system/snmp', label: 'SNMP' },
+    { id: 'system/users-roles', label: 'Users and Roles' },
+    { id: 'system/global-settings', label: 'Global Settings' },
+    { id: 'system/diagnostics', label: 'Diagnostics' }
+  ]}
+];
+
+function renderSidebar() {
+  const sb = document.getElementById('sidebar');
+  const currentRoute = (location.hash.slice(1) || 'dashboard/front-panel');
+  sb.innerHTML = NAV.map(group => {
+    const collapsed = JSON.parse(localStorage.getItem('nav-collapsed-' + group.group) || 'false');
+    const items = group.items.map(it =>
+      `<a class="nav-item ${currentRoute === it.id ? 'active' : ''}" data-route="${it.id}">${it.label}</a>`
+    ).join('');
+    return `
+      <div class="nav-group ${collapsed ? 'collapsed' : ''}" data-group="${group.group}">
+        <div class="nav-group-header"><span>${group.group}</span><span class="chevron">▼</span></div>
+        <div class="nav-items">${items}</div>
+      </div>`;
+  }).join('');
+  sb.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => { location.hash = '#' + item.dataset.route; });
+  });
+  sb.querySelectorAll('.nav-group-header').forEach(h => {
+    h.addEventListener('click', () => {
+      const g = h.parentElement;
+      g.classList.toggle('collapsed');
+      localStorage.setItem('nav-collapsed-' + g.dataset.group, g.classList.contains('collapsed'));
+    });
+  });
+}
+
+const ROUTES = {};
+function registerRoute(path, renderFn, breadcrumb) { ROUTES[path] = { render: renderFn, breadcrumb }; }
+
+function renderApp() {
+  const route = location.hash.slice(1) || 'dashboard/front-panel';
+  renderSidebar();
+  const handler = ROUTES[route] || { render: renderNotFound, breadcrumb: ['Unknown'] };
+  renderBreadcrumb(handler.breadcrumb || [route]);
+  try {
+    const result = handler.render();
+    // System pages return an HTMLElement — insert it into #page
+    if (result && result.nodeType === 1) {
+      const pageEl = document.getElementById('page');
+      pageEl.innerHTML = '';
+      // Move children of returned wrapper into #page so handlers stay live
+      while (result.firstChild) pageEl.appendChild(result.firstChild);
+    }
+  }
+  catch(e) {
+    console.error(e);
+    document.getElementById('page').innerHTML = `<div class="alert danger"><strong>Render error:</strong> ${escape(e.message)}</div>`;
+  }
+  document.getElementById('tb-hostname').textContent = state.system.hostname;
+  const _mainEl = document.querySelector('.main');
+  if (_mainEl && typeof _mainEl.scrollTo === 'function') _mainEl.scrollTo(0, 0);
+}
+
+function renderBreadcrumb(parts) {
+  document.getElementById('breadcrumb').innerHTML = parts.map((p, i) =>
+    i === parts.length - 1 ? `<span class="current">${escape(p)}</span>` : `<a>${escape(p)}</a><span class="sep">›</span>`
+  ).join('');
+}
+
+function renderNotFound() {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Page not found</div>
+    <div class="alert warn">This route doesn't exist. Use the navigation on the left.</div>`;
+}
+
+function placeholderPage(title, desc, note) {
+  return () => {
+    document.getElementById('page').innerHTML = `
+      <div class="page-title">${escape(title)}</div>
+      <div class="page-subtitle">${escape(desc)}</div>
+      <div class="alert info">${escape(note || 'This page is part of the Fireware Web UI navigation but is not built out as fully interactive in this simulator. The most exam-relevant configuration screens are fully functional — see Network → Interfaces, Firewall → Policies, VPN → Branch Office VPN, and Subscription Services.')}</div>`;
+  };
+}
+
+// ========================================================================
+// HELPERS
+// ========================================================================
+function el(html) {
+  const t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
+}
+function escape(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg) {
+  const t = el(`<div class="toast">${escape(msg)}</div>`);
+  document.getElementById('toast-root').appendChild(t);
+  setTimeout(() => t.remove(), 2400);
+}
+function modal({title, body, footer, onClose, wide}) {
+  const m = el(`
+    <div class="modal-backdrop">
+      <div class="modal" ${wide ? 'style="max-width:900px"' : ''}>
+        <div class="modal-header"><span>${escape(title)}</span><button class="modal-close">×</button></div>
+        <div class="modal-body"></div>
+        <div class="modal-footer"></div>
+      </div>
+    </div>`);
+  m.querySelector('.modal-body').innerHTML = body;
+  m.querySelector('.modal-footer').innerHTML = footer;
+  m.querySelector('.modal-close').addEventListener('click', () => { m.remove(); if (onClose) onClose(); });
+  m.addEventListener('click', e => { if (e.target === m) { m.remove(); if (onClose) onClose(); } });
+  document.getElementById('modal-root').appendChild(m);
+  return m;
+}
+function closeModal() { document.querySelectorAll('.modal-backdrop').forEach(m => m.remove()); }
+function confirmDialog(msg, onYes) {
+  modal({
+    title: 'Confirm',
+    body: `<p>${escape(msg)}</p>`,
+    footer: `<button class="btn" id="cd-no">Cancel</button><button class="btn primary" id="cd-yes">Confirm</button>`
+  });
+  document.getElementById('cd-no').onclick = closeModal;
+  document.getElementById('cd-yes').onclick = () => { closeModal(); onYes(); };
+}
+function nextId(arr) { return (arr.length === 0) ? 1 : Math.max(...arr.map(o => o.id || 0)) + 1; }
+function fmtList(arr) { if (!arr || arr.length === 0) return '<span class="text-muted">—</span>'; return arr.map(escape).join(', '); }
+function getInterfaceByName(name) { return state.interfaces.find(i => i.name === name); }
+function aliasNames() { return state.aliases.map(a => a.name); }
+function scheduleNames() { return state.schedules.map(s => s.name); }
+function authServerNames() { return state.authServers.map(s => s.name); }
+function activeInterfaces() { return state.interfaces.filter(i => i.enabled); }
+
+
+// ========================================================================
+// DASHBOARD PAGES
+// ========================================================================
+registerRoute('dashboard/front-panel', () => {
+  const ifs = state.interfaces;
+  const enabledCount = ifs.filter(i => i.enabled).length;
+  const services = state.services;
+  const enabledServices = Object.values(services).filter(s => s.enabled).length;
+  const totalServices = Object.keys(services).length;
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">
+      Front Panel
+      <div class="actions"><button class="btn" onclick="renderApp()">⟳ Refresh</button></div>
+    </div>
+    <div class="page-subtitle">Live overview of your Firebox M270 ${escape(state.system.hostname)}</div>
+
+    <div class="grid mb-16">
+      <div class="stat-card">
+        <div class="stat-label">System Status</div>
+        <div class="stat-value"><span class="dot green"></span>Online</div>
+        <div class="stat-sub">Uptime: ${escape(state.system.uptime)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Interfaces</div>
+        <div class="stat-value">${enabledCount} / 8</div>
+        <div class="stat-sub">${enabledCount} of 8 ports configured</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Services</div>
+        <div class="stat-value">${enabledServices} / ${totalServices}</div>
+        <div class="stat-sub">Subscription services enabled</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Firewall Policies</div>
+        <div class="stat-value">${state.policies.length}</div>
+        <div class="stat-sub">${state.policies.filter(p => p.enabled).length} active</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">CPU</div>
+        <div class="stat-value">${state.system.cpu}%</div>
+        <div class="stat-sub">Memory: ${state.system.memory}%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Feature Key</div>
+        <div class="stat-value" style="font-size:18px">${escape(state.featureKey.type)}</div>
+        <div class="stat-sub">Expires: ${escape(state.featureKey.expires)}</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">Interface Status</div>
+      <div class="panel-body">
+        <div class="port-bank mb-16">
+          ${ifs.map(i => `
+            <div class="port ${i.enabled ? 'up' : 'disabled'}" title="Eth${i.id}: ${escape(i.name)} (${escape(i.zone)})">
+              <span class="port-led"></span>
+              <span class="port-num">${i.id}</span>
+              <span class="port-zone">${i.enabled ? escape(i.zone.slice(0,4)) : 'OFF'}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="text-small text-muted">Click any interface in the Network → Interfaces page to configure.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">Recent Activity (simulated)</div>
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Time</th><th>Event</th><th>Source</th><th>Severity</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">2026-05-09 03:14</td><td>Configuration saved</td><td>admin</td><td><span class="pill info">Info</span></td></tr>
+            <tr><td class="mono">2026-05-09 02:14</td><td>IPS signature update successful (20,184 sigs)</td><td>system</td><td><span class="pill up">OK</span></td></tr>
+            <tr><td class="mono">2026-05-09 02:14</td><td>GAV signature update successful</td><td>system</td><td><span class="pill up">OK</span></td></tr>
+            <tr><td class="mono">2026-05-09 01:42</td><td>BOVPN tunnel attempt from unknown peer 198.51.100.45</td><td>External</td><td><span class="pill warn">Warn</span></td></tr>
+            <tr><td class="mono">2026-05-08 23:18</td><td>Botnet site blocked: 185.220.101.42</td><td>10.0.1.42</td><td><span class="pill down">Block</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}, ['Dashboard', 'Front Panel']);
+
+registerRoute('dashboard/subscription-services', () => {
+  const rows = Object.entries(state.services).map(([key, s]) => {
+    const display = {
+      gav: 'Gateway AntiVirus', iav: 'IntelligentAV', apt: 'APT Blocker', ips: 'Intrusion Prevention',
+      webblocker: 'WebBlocker', appcontrol: 'Application Control', spamblocker: 'spamBlocker',
+      red: 'Reputation Enabled Defense', botnet: 'Botnet Detection', geo: 'Geolocation',
+      dlp: 'Data Loss Prevention', dnswatch: 'DNSWatch'
+    }[key];
+    return `<tr>
+      <td>${escape(display)}</td>
+      <td>${s.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+      <td>${s.lastUpdate ? '<span class="mono">'+escape(s.lastUpdate)+'</span>' : '<span class="text-muted">—</span>'}</td>
+      <td>${s.signatures || '<span class="text-muted">—</span>'}</td>
+      <td><a href="#services/${key}" style="color:var(--link)">Configure →</a></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Subscription Services</div>
+    <div class="page-subtitle">Status of all licensed security services on this Firebox</div>
+    <div class="panel">
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Service</th><th>Status</th><th>Last Update</th><th>Signatures</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}, ['Dashboard', 'Subscription Services']);
+
+registerRoute('dashboard/interfaces', () => {
+  const rows = state.interfaces.map(i => `
+    <tr>
+      <td>Eth${i.id}</td>
+      <td>${escape(i.name)}</td>
+      <td><span class="zone-badge zone-${i.zone}">${escape(i.zone)}</span></td>
+      <td>${i.enabled ? '<span class="pill up">Up</span>' : '<span class="pill disabled">Down</span>'}</td>
+      <td>${i.ip ? '<span class="mono">'+escape(i.ip)+'/'+escape(i.mask)+'</span>' : '<span class="text-muted">—</span>'}</td>
+      <td>${escape(i.link)}</td>
+      <td class="mono text-small">${escape(i.mac)}</td>
+    </tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Interfaces</div>
+    <div class="page-subtitle">Physical port status and link state</div>
+    <div class="panel">
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Port</th><th>Name</th><th>Zone</th><th>State</th><th>IP / Mask</th><th>Link</th><th>MAC</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}, ['Dashboard', 'Interfaces']);
+
+registerRoute('dashboard/firewatch', placeholderPage('FireWatch', 'Interactive bandwidth visualization showing top users, applications, and destinations.', 'FireWatch live visualization is delivered by Dimension or WatchGuard Cloud — see those products for full functionality.'), ['Dashboard', 'FireWatch']);
+registerRoute('dashboard/traffic-monitor', placeholderPage('Traffic Monitor', 'Live log message stream as traffic flows through the Firebox.'), ['Dashboard', 'Traffic Monitor']);
+registerRoute('dashboard/bandwidth', placeholderPage('Bandwidth Meter', 'Per-interface bandwidth utilization graphs.'), ['Dashboard', 'Bandwidth Meter']);
+
+// ========================================================================
+// SYSTEM STATUS PAGES
+// ========================================================================
+registerRoute('status/status-report', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Status Report</div>
+    <div class="page-subtitle">Detailed system, network, and service state — read-only.</div>
+    <div class="panel">
+      <div class="panel-header">Device Information</div>
+      <div class="panel-body">
+        <div class="form-row"><label>Hostname</label><span class="mono">${escape(state.system.hostname)}</span></div>
+        <div class="form-row"><label>Model</label><span>${escape(state.system.model)}</span></div>
+        <div class="form-row"><label>Serial Number</label><span class="mono">${escape(state.system.serial)}</span></div>
+        <div class="form-row"><label>Fireware OS</label><span>${escape(state.system.firmware)}</span></div>
+        <div class="form-row"><label>Uptime</label><span>${escape(state.system.uptime)}</span></div>
+        <div class="form-row"><label>Time Zone</label><span>${escape(state.system.timeZone)}</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">Component Status</div>
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Component</th><th>State</th><th>Details</th></tr></thead>
+          <tbody>
+            <tr><td>Power Supply</td><td><span class="pill up">OK</span></td><td>Internal AC, auto-sensing</td></tr>
+            <tr><td>System Fan</td><td><span class="pill up">OK</span></td><td>RPM auto-controlled, current temp 38°C</td></tr>
+            <tr><td>CPU</td><td><span class="pill up">OK</span></td><td>${state.system.cpu}% utilization</td></tr>
+            <tr><td>Memory</td><td><span class="pill up">OK</span></td><td>${state.system.memory}% used</td></tr>
+            <tr><td>Internal Storage</td><td><span class="pill up">OK</span></td><td>43% used</td></tr>
+            <tr><td>Subscription Services</td><td><span class="pill up">Active</span></td><td>${escape(state.featureKey.type)}</td></tr>
+            <tr><td>NTP Sync</td><td><span class="pill up">In Sync</span></td><td>${escape(state.ntp.servers[0])}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}, ['System Status', 'Status Report']);
+
+registerRoute('status/license', () => {
+  const services = Object.entries(state.featureKey.services).map(([k, v]) => `
+    <tr>
+      <td>${escape(k)}</td>
+      <td>${typeof v === 'boolean' ? (v ? '<span class="pill up">Licensed</span>' : '<span class="pill disabled">Not Licensed</span>') : '<span class="mono">' + escape(v) + '</span>'}</td>
+    </tr>
+  `).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">License</div>
+    <div class="page-subtitle">Feature key — capabilities and entitlements</div>
+    <div class="panel">
+      <div class="panel-header">License Summary</div>
+      <div class="panel-body">
+        <div class="form-row"><label>Bundle</label><span class="text-bold">${escape(state.featureKey.type)}</span></div>
+        <div class="form-row"><label>Expires</label><span>${escape(state.featureKey.expires)}</span></div>
+        <div class="form-row"><label>Authenticated Users</label><span>${escape(state.featureKey.seats)}</span></div>
+        <div class="form-row"><label>Serial</label><span class="mono">${escape(state.system.serial)}</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">Licensed Features</div>
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+          <tbody>${services}</tbody>
+        </table>
+      </div>
+    </div>`;
+}, ['System Status', 'License']);
+
+registerRoute('status/connections', () => {
+  const sample = [
+    { src: '10.0.1.42', sport: 51234, dst: '142.250.80.46', dport: 443, proto: 'TCP', policy: 'HTTPS-proxy', user: 'jdoe', state: 'ESTABLISHED' },
+    { src: '10.0.1.18', sport: 49872, dst: '8.8.8.8', dport: 53, proto: 'UDP', policy: 'DNS', user: '—', state: 'ACTIVE' },
+    { src: '10.0.2.5', sport: 60123, dst: '52.84.150.39', dport: 443, proto: 'TCP', policy: 'HTTPS-proxy', user: 'msmith', state: 'ESTABLISHED' },
+    { src: '10.0.1.7', sport: 55881, dst: '13.107.42.14', dport: 443, proto: 'TCP', policy: 'HTTPS-proxy', user: 'jdoe', state: 'ESTABLISHED' },
+    { src: '10.0.1.42', sport: 51235, dst: '199.232.45.108', dport: 443, proto: 'TCP', policy: 'HTTPS-proxy', user: 'jdoe', state: 'TIME_WAIT' }
+  ];
+  const rows = sample.map(c => `
+    <tr>
+      <td class="mono">${escape(c.src)}:${c.sport}</td>
+      <td class="mono">${escape(c.dst)}:${c.dport}</td>
+      <td>${escape(c.proto)}</td>
+      <td>${escape(c.policy)}</td>
+      <td>${escape(c.user)}</td>
+      <td><span class="pill up">${escape(c.state)}</span></td>
+    </tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Connections</div>
+    <div class="page-subtitle">Active connections through the Firebox (sample data)</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>Source</th><th>Destination</th><th>Proto</th><th>Policy</th><th>User</th><th>State</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>`;
+}, ['System Status', 'Connections']);
+
+registerRoute('status/auth-list', () => {
+  const sample = [
+    { user: 'jdoe', ip: '10.0.1.42', server: 'AD-Primary', method: 'SSO', loginTime: '2026-05-09 08:14:22', expires: '60 min idle' },
+    { user: 'msmith', ip: '10.0.2.5', server: 'AD-Primary', method: 'SSO', loginTime: '2026-05-09 09:02:11', expires: '60 min idle' },
+    { user: 'admin', ip: '10.0.1.50', server: 'Firebox-DB', method: 'Web Portal', loginTime: '2026-05-09 03:14:00', expires: '30 min idle' }
+  ];
+  const rows = sample.map(a => `
+    <tr><td>${escape(a.user)}</td><td class="mono">${escape(a.ip)}</td><td>${escape(a.server)}</td><td>${escape(a.method)}</td><td class="mono">${escape(a.loginTime)}</td><td>${escape(a.expires)}</td></tr>
+  `).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Authentication List</div>
+    <div class="page-subtitle">Currently authenticated users (sample data)</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>User</th><th>Source IP</th><th>Auth Server</th><th>Method</th><th>Login Time</th><th>Session</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>`;
+}, ['System Status', 'Authentication List']);
+
+registerRoute('status/blocked-sites', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Blocked Sites</div>
+    <div class="page-subtitle">IPs temporarily added to the Blocked Sites list (auto-block on threats)</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>IP Address</th><th>Reason</th><th>Added</th><th>Expires</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">198.51.100.45</td><td>BOVPN Phase 1 negotiation failed (5 attempts)</td><td class="mono">2026-05-09 01:42:11</td><td class="mono">in 18 min</td></tr>
+          <tr><td class="mono">203.0.113.187</td><td>Port scan detected on External</td><td class="mono">2026-05-08 22:15:08</td><td class="mono">expired</td></tr>
+        </tbody>
+      </table>
+    </div></div>`;
+}, ['System Status', 'Blocked Sites']);
+
+registerRoute('status/cpu', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">CPU & Memory</div>
+    <div class="grid">
+      <div class="stat-card">
+        <div class="stat-label">CPU Utilization</div>
+        <div class="stat-value">${state.system.cpu}%</div>
+        <div class="stat-sub">5-min average</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Memory</div>
+        <div class="stat-value">${state.system.memory}%</div>
+        <div class="stat-sub">M270 has 4 GB RAM</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Storage</div>
+        <div class="stat-value">43%</div>
+        <div class="stat-sub">Internal flash</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sessions</div>
+        <div class="stat-value">847</div>
+        <div class="stat-sub">of 75,000 max</div>
+      </div>
+    </div>`;
+}, ['System Status', 'CPU & Memory']);
+
+registerRoute('status/dhcp-leases', () => {
+  const leases = [
+    { mac: 'A4:5E:60:12:34:56', ip: '10.0.1.42', host: 'jdoe-laptop', expires: 'in 23h 14m' },
+    { mac: '7C:5C:F8:AB:CD:EF', ip: '10.0.1.43', host: 'msmith-desk', expires: 'in 22h 51m' },
+    { mac: 'F0:18:98:01:23:45', ip: '10.0.1.44', host: 'iphone-jdoe', expires: 'in 11h 02m' },
+    { mac: 'B8:27:EB:99:88:77', ip: '10.0.2.5', host: 'guest-laptop', expires: 'in 1h 33m' }
+  ];
+  const rows = leases.map(l => `<tr><td class="mono">${escape(l.mac)}</td><td class="mono">${escape(l.ip)}</td><td>${escape(l.host)}</td><td>${escape(l.expires)}</td></tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">DHCP Leases</div>
+    <div class="page-subtitle">Active DHCP leases issued by the Firebox</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>MAC Address</th><th>IP Address</th><th>Host Name</th><th>Lease Expires</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>`;
+}, ['System Status', 'DHCP Leases']);
+
+registerRoute('status/routes', () => {
+  const rows = state.routes.map(r => `
+    <tr><td class="mono">${escape(r.dest)}</td><td class="mono">${escape(r.gateway)}</td><td>${escape(r.interface)}</td><td>${r.metric}</td><td>${escape(r.type)}</td></tr>
+  `).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Routes (Read-Only View)</div>
+    <div class="page-subtitle">Current routing table — to edit static routes go to Network → Routes</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>Destination</th><th>Gateway</th><th>Interface</th><th>Metric</th><th>Type</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>`;
+}, ['System Status', 'Routes']);
+
+registerRoute('status/arp', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">ARP Table</div>
+    <div class="page-subtitle">IP-to-MAC address mappings learned by the Firebox</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>IP Address</th><th>MAC Address</th><th>Interface</th><th>Type</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">203.0.113.1</td><td class="mono">00:1C:73:01:23:45</td><td>External</td><td>Dynamic</td></tr>
+          <tr><td class="mono">10.0.1.42</td><td class="mono">A4:5E:60:12:34:56</td><td>Trusted</td><td>Dynamic</td></tr>
+          <tr><td class="mono">10.0.1.43</td><td class="mono">7C:5C:F8:AB:CD:EF</td><td>Trusted</td><td>Dynamic</td></tr>
+          <tr><td class="mono">10.0.2.5</td><td class="mono">B8:27:EB:99:88:77</td><td>Optional-1</td><td>Dynamic</td></tr>
+        </tbody>
+      </table>
+    </div></div>`;
+}, ['System Status', 'ARP Table']);
+
+registerRoute('status/vpn-stats', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">VPN Statistics</div>
+    <div class="page-subtitle">Live status of all VPN tunnels and mobile VPN sessions</div>
+    <div class="panel">
+      <div class="panel-header">Branch Office VPN Tunnels</div>
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Tunnel</th><th>Peer</th><th>State</th><th>Uptime</th><th>Bytes In</th><th>Bytes Out</th></tr></thead>
+          <tbody>
+            ${state.bovpnTunnels.length === 0 ? '<tr><td colspan="6" class="text-center text-muted">No BOVPN tunnels configured</td></tr>' :
+              state.bovpnTunnels.map(t => `<tr><td>${escape(t.name)}</td><td class="mono">${escape(t.peerIp || '—')}</td><td><span class="pill up">Up</span></td><td>—</td><td>—</td><td>—</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">Mobile VPN Sessions</div>
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>User</th><th>Type</th><th>Virtual IP</th><th>Real IP</th><th>Login Time</th></tr></thead>
+          <tbody><tr><td colspan="5" class="text-center text-muted">No active mobile VPN sessions</td></tr></tbody>
+        </table>
+      </div>
+    </div>`;
+}, ['System Status', 'VPN Statistics']);
+
+// ========================================================================
+// NETWORK PAGES
+// ========================================================================
+registerRoute('network/interfaces', () => {
+  const rows = state.interfaces.map(i => `
+    <tr>
+      <td>Eth${i.id}</td>
+      <td>${escape(i.name)}</td>
+      <td><span class="zone-badge zone-${i.zone}">${escape(i.zone)}</span></td>
+      <td>${i.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+      <td class="mono">${i.ip ? escape(i.ip)+'/'+escape(i.mask) : '<span class="text-muted">—</span>'}</td>
+      <td>${escape(i.method.toUpperCase())}</td>
+      <td>${i.dhcpServer ? '<span class="pill info">Server</span>' : '<span class="text-muted">—</span>'}</td>
+      <td class="actions-cell"><a onclick="editInterface(${i.id})">Configure</a></td>
+    </tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">
+      Network Interfaces
+      <div class="actions"><button class="btn" onclick="renderApp()">⟳ Refresh</button></div>
+    </div>
+    <div class="page-subtitle">Configure the 8 physical Ethernet interfaces on this Firebox M270</div>
+    <div class="panel">
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Port</th><th>Name</th><th>Zone</th><th>State</th><th>IP / Mask</th><th>Method</th><th>DHCP</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}, ['Network', 'Interfaces']);
+
+window.editInterface = function(id) {
+  const iface = state.interfaces.find(i => i.id === id);
+  if (!iface) return;
+  modal({
+    title: `Interface Eth${id} — Configuration`,
+    wide: true,
+    body: `
+      <div class="tabs">
+        <button class="tab active" data-tab="if-general">General</button>
+        <button class="tab" data-tab="if-ipv4">IPv4</button>
+        <button class="tab" data-tab="if-dhcp">DHCP Server</button>
+        <button class="tab" data-tab="if-advanced">Advanced</button>
+      </div>
+      <div id="if-general">
+        <div class="form-row"><label>Interface Number</label><span class="mono">Eth${id}</span></div>
+        <div class="form-row"><label>Interface Name</label><input type="text" id="if-name" value="${escape(iface.name)}"></div>
+        <div class="form-row"><label>Interface Type</label>
+          <select id="if-zone">
+            <option ${iface.zone === 'External' ? 'selected' : ''}>External</option>
+            <option ${iface.zone === 'Trusted' ? 'selected' : ''}>Trusted</option>
+            <option ${iface.zone === 'Optional' ? 'selected' : ''}>Optional</option>
+            <option ${iface.zone === 'Custom' ? 'selected' : ''}>Custom</option>
+            <option ${iface.zone === 'VLAN' ? 'selected' : ''}>VLAN</option>
+            <option ${iface.zone === 'Disabled' ? 'selected' : ''}>Disabled</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="if-enabled" ${iface.enabled ? 'checked' : ''}><label for="if-enabled">Bring this interface up</label></div></div>
+        <div class="form-row"><label>MAC Address</label><span class="mono">${escape(iface.mac)}</span></div>
+        <div class="form-row"><label>Link Speed</label><span>${escape(iface.link)}</span></div>
+      </div>
+      <div id="if-ipv4" class="hidden">
+        <div class="form-row"><label>Configuration Method</label>
+          <select id="if-method">
+            <option value="static" ${iface.method === 'static' ? 'selected' : ''}>Static IP</option>
+            <option value="dhcp" ${iface.method === 'dhcp' ? 'selected' : ''}>DHCP Client</option>
+            <option value="pppoe" ${iface.method === 'pppoe' ? 'selected' : ''}>PPPoE</option>
+          </select>
+        </div>
+        <div class="form-row"><label>IP Address</label><input type="text" id="if-ip" value="${escape(iface.ip)}" placeholder="e.g., 10.0.1.1"></div>
+        <div class="form-row"><label>Subnet Mask</label>
+          <select id="if-mask">
+            <option value="8" ${iface.mask==='8'?'selected':''}>/8 (255.0.0.0)</option>
+            <option value="16" ${iface.mask==='16'?'selected':''}>/16 (255.255.0.0)</option>
+            <option value="24" ${iface.mask==='24'?'selected':''}>/24 (255.255.255.0)</option>
+            <option value="25" ${iface.mask==='25'?'selected':''}>/25 (255.255.255.128)</option>
+            <option value="26" ${iface.mask==='26'?'selected':''}>/26 (255.255.255.192)</option>
+            <option value="27" ${iface.mask==='27'?'selected':''}>/27 (255.255.255.224)</option>
+            <option value="28" ${iface.mask==='28'?'selected':''}>/28 (255.255.255.240)</option>
+            <option value="29" ${iface.mask==='29'?'selected':''}>/29 (255.255.255.248)</option>
+            <option value="30" ${iface.mask==='30'?'selected':''}>/30 (255.255.255.252)</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Default Gateway</label><input type="text" id="if-gateway" value="${escape(iface.gateway)}" placeholder="(External only)"></div>
+        <div class="form-row"><label>MTU</label><input type="number" id="if-mtu" value="${iface.mtu}"></div>
+      </div>
+      <div id="if-dhcp" class="hidden">
+        <div class="form-row"><label>DHCP Server</label><div class="checkbox-row"><input type="checkbox" id="if-dhcp-server" ${iface.dhcpServer ? 'checked' : ''}><label for="if-dhcp-server">Enable DHCP server on this interface</label></div></div>
+        <div class="form-row"><label>Address Pool Start</label><input type="text" id="if-dhcp-start" value="${escape(iface.dhcpStart)}" placeholder="e.g., 10.0.1.10"></div>
+        <div class="form-row"><label>Address Pool End</label><input type="text" id="if-dhcp-end" value="${escape(iface.dhcpEnd)}" placeholder="e.g., 10.0.1.200"></div>
+        <div class="form-row"><div></div><div class="help">Lease duration default: 24 hours. Sub-pools and reservations configured separately.</div></div>
+      </div>
+      <div id="if-advanced" class="hidden">
+        <div class="alert info"><strong>Advanced settings</strong> include link aggregation, VLAN tagging, secondary IPs, and custom IPv4 routing — typically not changed on a basic install.</div>
+        <div class="form-row"><label>Block spoofing attacks</label><div class="checkbox-row"><input type="checkbox" checked><label>Drop packets with spoofed source addresses</label></div></div>
+        <div class="form-row"><label>Block Botnet sites</label><div class="checkbox-row"><input type="checkbox" checked><label>Apply Botnet Detection on this interface</label></div></div>
+      </div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveInterface(${id})">Save</button>`
+  });
+  document.querySelectorAll('.modal .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.modal .tab').forEach(t => t.classList.toggle('active', t === tab));
+      ['if-general', 'if-ipv4', 'if-dhcp', 'if-advanced'].forEach(id => {
+        document.getElementById(id).classList.toggle('hidden', id !== tab.dataset.tab);
+      });
+    });
+  });
+};
+
+window.saveInterface = function(id) {
+  const iface = state.interfaces.find(i => i.id === id);
+  iface.name = document.getElementById('if-name').value || `Eth${id}`;
+  iface.zone = document.getElementById('if-zone').value;
+  iface.enabled = document.getElementById('if-enabled').checked;
+  iface.method = document.getElementById('if-method').value;
+  iface.ip = document.getElementById('if-ip').value;
+  iface.mask = document.getElementById('if-mask').value;
+  iface.gateway = document.getElementById('if-gateway').value;
+  iface.mtu = parseInt(document.getElementById('if-mtu').value) || 1500;
+  iface.dhcpServer = document.getElementById('if-dhcp-server').checked;
+  iface.dhcpStart = document.getElementById('if-dhcp-start').value;
+  iface.dhcpEnd = document.getElementById('if-dhcp-end').value;
+  iface.link = iface.enabled ? '1000Mbps Full' : 'Down';
+  saveState();
+  closeModal();
+  toast(`Eth${id} (${iface.name}) saved`);
+  renderApp();
+};
+
+registerRoute('network/multi-wan', () => {
+  const externalIfs = state.interfaces.filter(i => i.zone === 'External');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Multi-WAN
+      <div class="actions"><button class="btn primary" onclick="saveMultiWan()">Save</button></div>
+    </div>
+    <div class="page-subtitle">Configure how the Firebox uses multiple External interfaces</div>
+    <div class="panel">
+      <div class="panel-header">Method</div>
+      <div class="panel-body">
+        <div class="radio-group">
+          <div class="radio-row"><input type="radio" name="mwan-method" id="mwan-failover" value="failover" ${state.multiWan.method === 'failover' ? 'checked' : ''}><label for="mwan-failover"><strong>Failover</strong> — uses the primary WAN; falls over to secondary when primary fails link/probe checks</label></div>
+          <div class="radio-row"><input type="radio" name="mwan-method" id="mwan-rr" value="round-robin" ${state.multiWan.method === 'round-robin' ? 'checked' : ''}><label for="mwan-rr"><strong>Round-Robin</strong> — distributes new connections across all healthy WANs in rotation</label></div>
+          <div class="radio-row"><input type="radio" name="mwan-method" id="mwan-overflow" value="overflow" ${state.multiWan.method === 'overflow' ? 'checked' : ''}><label for="mwan-overflow"><strong>Interface Overflow</strong> — sends all traffic to primary until threshold is hit, then spills to secondary</label></div>
+          <div class="radio-row"><input type="radio" name="mwan-method" id="mwan-rt" value="routing-table" ${state.multiWan.method === 'routing-table' ? 'checked' : ''}><label for="mwan-rt"><strong>Routing Table</strong> — uses the OS routing table (and policy-based routing) for path selection</label></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">External Interfaces</div>
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Interface</th><th>IP</th><th>Gateway</th><th>State</th></tr></thead>
+          <tbody>
+            ${externalIfs.length === 0 ? '<tr><td colspan="4" class="text-center text-muted">No External interfaces configured. Configure one in Network → Interfaces.</td></tr>' :
+              externalIfs.map(i => `<tr><td>${escape(i.name)}</td><td class="mono">${escape(i.ip)}/${escape(i.mask)}</td><td class="mono">${escape(i.gateway || '—')}</td><td>${i.enabled ? '<span class="pill up">Up</span>' : '<span class="pill disabled">Down</span>'}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">Sticky Connections</div>
+      <div class="panel-body">
+        <div class="form-row"><label>Sticky Connections</label><div class="checkbox-row"><input type="checkbox" id="mwan-sticky" ${state.multiWan.stickyConnections ? 'checked' : ''}><label for="mwan-sticky">Keep flows on the WAN they started on (recommended)</label></div></div>
+        <div class="form-row"><label>Sticky Timeout (min)</label><input type="number" id="mwan-sticky-timeout" value="${state.multiWan.stickyTimeout}"></div>
+        <div class="form-row"><div></div><div class="help">Sticky connections prevent banking and SaaS sessions from breaking when the multi-WAN method would otherwise distribute their packets across different WANs.</div></div>
+      </div>
+    </div>`;
+}, ['Network', 'Multi-WAN']);
+
+window.saveMultiWan = function() {
+  state.multiWan.method = document.querySelector('input[name="mwan-method"]:checked').value;
+  state.multiWan.stickyConnections = document.getElementById('mwan-sticky').checked;
+  state.multiWan.stickyTimeout = parseInt(document.getElementById('mwan-sticky-timeout').value) || 3;
+  saveState();
+  toast('Multi-WAN settings saved');
+  renderApp();
+};
+
+registerRoute('network/routes', () => {
+  const rows = state.routes.map(r => `
+    <tr>
+      <td class="mono">${escape(r.dest)}</td>
+      <td class="mono">${escape(r.gateway)}</td>
+      <td>${escape(r.interface)}</td>
+      <td>${r.metric}</td>
+      <td>${escape(r.type)}</td>
+      <td>${r.enabled ? '<span class="pill up">Active</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+      <td class="actions-cell">
+        ${r.type !== 'Default' ? `<a onclick="editRoute(${r.id})">Edit</a><a class="danger" onclick="deleteRoute(${r.id})">Delete</a>` : '<span class="text-muted">—</span>'}
+      </td>
+    </tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Routes
+      <div class="actions"><button class="btn primary" onclick="editRoute(0)">+ Add Route</button></div>
+    </div>
+    <div class="page-subtitle">Static routes for destinations beyond directly-connected networks</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>Destination</th><th>Gateway</th><th>Interface</th><th>Metric</th><th>Type</th><th>State</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>`;
+}, ['Network', 'Routes']);
+
+window.editRoute = function(id) {
+  const route = id ? state.routes.find(r => r.id === id) : { dest: '', gateway: '', metric: 1, interface: '', type: 'Static', enabled: true };
+  const isNew = !id;
+  const ifOptions = state.interfaces.filter(i => i.enabled).map(i => `<option ${route.interface === i.name ? 'selected' : ''}>${escape(i.name)}</option>`).join('');
+  modal({
+    title: isNew ? 'Add Static Route' : `Edit Route — ${escape(route.dest)}`,
+    body: `
+      <div class="form-row"><label>Destination Network</label><input type="text" id="rt-dest" value="${escape(route.dest)}" placeholder="e.g., 10.10.50.0/24"></div>
+      <div class="form-row"><label>Gateway IP</label><input type="text" id="rt-gw" value="${escape(route.gateway)}" placeholder="e.g., 10.0.1.250"></div>
+      <div class="form-row"><label>Interface</label><select id="rt-if"><option value="">— auto —</option>${ifOptions}</select></div>
+      <div class="form-row"><label>Metric</label><input type="number" id="rt-metric" value="${route.metric}"></div>
+      <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="rt-enabled" ${route.enabled ? 'checked' : ''}><label for="rt-enabled">Route is active</label></div></div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveRoute(${id})">Save</button>`
+  });
+};
+
+window.saveRoute = function(id) {
+  const data = {
+    dest: document.getElementById('rt-dest').value,
+    gateway: document.getElementById('rt-gw').value,
+    interface: document.getElementById('rt-if').value || 'Trusted',
+    metric: parseInt(document.getElementById('rt-metric').value) || 1,
+    enabled: document.getElementById('rt-enabled').checked,
+    type: 'Static'
+  };
+  if (!data.dest || !data.gateway) { toast('Destination and gateway are required'); return; }
+  if (id) {
+    const r = state.routes.find(r => r.id === id);
+    Object.assign(r, data);
+  } else {
+    state.routes.push({ id: nextId(state.routes), ...data });
+  }
+  saveState();
+  closeModal();
+  toast(id ? 'Route saved' : 'Route added');
+  renderApp();
+};
+
+window.deleteRoute = function(id) {
+  confirmDialog('Delete this route?', () => {
+    state.routes = state.routes.filter(r => r.id !== id);
+    saveState();
+    toast('Route deleted');
+    renderApp();
+  });
+};
+
+registerRoute('network/nat', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">NAT</div>
+    <div class="page-subtitle">Network Address Translation — Dynamic NAT (outbound) and 1-to-1 NAT</div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="nat-dynamic">Dynamic NAT</button>
+      <button class="tab" data-tab="nat-1to1">1-to-1 NAT</button>
+    </div>
+    <div id="nat-dynamic">
+      <div class="alert info"><strong>Dynamic NAT (outbound)</strong> — multiple internal hosts share a single external IP via port translation (PAT). For inbound port forwarding (e.g., publishing a web server) use <strong>SNAT</strong> under Firewall → SNAT.</div>
+      <div class="panel">
+        <div class="panel-header">Dynamic NAT Rules<button class="btn sm primary" onclick="editDynNat(0)">+ Add</button></div>
+        <div class="panel-body flush">
+          <table class="data">
+            <thead><tr><th>From</th><th>To</th><th>State</th><th></th></tr></thead>
+            <tbody>
+              ${state.natDynamic.length === 0 ? '<tr><td colspan="4" class="text-center text-muted">No rules</td></tr>' :
+                state.natDynamic.map(n => `<tr>
+                  <td>${escape(n.from)}</td>
+                  <td>${escape(n.to)}</td>
+                  <td>${n.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+                  <td class="actions-cell"><a onclick="editDynNat(${n.id})">Edit</a><a class="danger" onclick="deleteDynNat(${n.id})">Delete</a></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="nat-1to1" class="hidden">
+      <div class="alert info"><strong>1-to-1 NAT</strong> — bidirectional fixed mapping between a public IP and an internal IP. Every port of the public IP maps to the internal host. Used when you need a dedicated public IP for a single internal server (mail, etc.).</div>
+      <div class="panel">
+        <div class="panel-header">1-to-1 NAT Rules<button class="btn sm primary" onclick="edit1to1Nat(0)">+ Add</button></div>
+        <div class="panel-body flush">
+          <table class="data">
+            <thead><tr><th>Name</th><th>External IP</th><th>Internal IP</th><th>Interface</th><th>State</th><th></th></tr></thead>
+            <tbody>
+              ${state.nat1to1.length === 0 ? '<tr><td colspan="6" class="text-center text-muted">No rules</td></tr>' :
+                state.nat1to1.map(n => `<tr>
+                  <td>${escape(n.name)}</td><td class="mono">${escape(n.externalIp)}</td><td class="mono">${escape(n.internalIp)}</td><td>${escape(n.interface)}</td>
+                  <td>${n.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+                  <td class="actions-cell"><a onclick="edit1to1Nat(${n.id})">Edit</a><a class="danger" onclick="delete1to1Nat(${n.id})">Delete</a></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  document.querySelectorAll('.tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tabs .tab').forEach(t => t.classList.toggle('active', t === tab));
+      ['nat-dynamic', 'nat-1to1'].forEach(id => document.getElementById(id).classList.toggle('hidden', id !== tab.dataset.tab));
+    });
+  });
+}, ['Network', 'NAT']);
+
+window.editDynNat = function(id) {
+  const rule = id ? state.natDynamic.find(n => n.id === id) : { from: 'Any-Trusted', to: 'Any-External', enabled: true };
+  const aliasOpts = aliasNames().map(a => `<option ${rule.from === a ? 'selected' : ''}>${escape(a)}</option>`).join('');
+  const aliasOpts2 = aliasNames().map(a => `<option ${rule.to === a ? 'selected' : ''}>${escape(a)}</option>`).join('');
+  modal({
+    title: id ? 'Edit Dynamic NAT Rule' : 'Add Dynamic NAT Rule',
+    body: `
+      <div class="form-row"><label>From</label><select id="dn-from">${aliasOpts}</select></div>
+      <div class="form-row"><label>To</label><select id="dn-to">${aliasOpts2}</select></div>
+      <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="dn-enabled" ${rule.enabled ? 'checked' : ''}><label for="dn-enabled">Active</label></div></div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveDynNat(${id})">Save</button>`
+  });
+};
+window.saveDynNat = function(id) {
+  const data = {
+    from: document.getElementById('dn-from').value,
+    to: document.getElementById('dn-to').value,
+    enabled: document.getElementById('dn-enabled').checked
+  };
+  if (id) Object.assign(state.natDynamic.find(n => n.id === id), data);
+  else state.natDynamic.push({ id: nextId(state.natDynamic), ...data });
+  saveState(); closeModal(); toast('Saved'); renderApp();
+};
+window.deleteDynNat = function(id) {
+  confirmDialog('Delete this Dynamic NAT rule?', () => {
+    state.natDynamic = state.natDynamic.filter(n => n.id !== id);
+    saveState(); toast('Deleted'); renderApp();
+  });
+};
+
+window.edit1to1Nat = function(id) {
+  const rule = id ? state.nat1to1.find(n => n.id === id) : { name: '', externalIp: '', internalIp: '', interface: 'External', enabled: true };
+  const ifOpts = state.interfaces.filter(i => i.zone === 'External').map(i => `<option ${rule.interface === i.name ? 'selected' : ''}>${escape(i.name)}</option>`).join('');
+  modal({
+    title: id ? 'Edit 1-to-1 NAT Rule' : 'Add 1-to-1 NAT Rule',
+    body: `
+      <div class="form-row"><label>Name</label><input type="text" id="nat-name" value="${escape(rule.name)}" placeholder="e.g., Mail-Server-NAT"></div>
+      <div class="form-row"><label>External IP</label><input type="text" id="nat-ext" value="${escape(rule.externalIp)}" placeholder="e.g., 203.0.113.20"></div>
+      <div class="form-row"><label>Internal IP</label><input type="text" id="nat-int" value="${escape(rule.internalIp)}" placeholder="e.g., 10.0.2.20"></div>
+      <div class="form-row"><label>Interface</label><select id="nat-if">${ifOpts}</select></div>
+      <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="nat-enabled" ${rule.enabled ? 'checked' : ''}><label for="nat-enabled">Active</label></div></div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="save1to1Nat(${id})">Save</button>`
+  });
+};
+window.save1to1Nat = function(id) {
+  const data = {
+    name: document.getElementById('nat-name').value,
+    externalIp: document.getElementById('nat-ext').value,
+    internalIp: document.getElementById('nat-int').value,
+    interface: document.getElementById('nat-if').value,
+    enabled: document.getElementById('nat-enabled').checked
+  };
+  if (!data.name || !data.externalIp || !data.internalIp) { toast('All fields required'); return; }
+  if (id) Object.assign(state.nat1to1.find(n => n.id === id), data);
+  else state.nat1to1.push({ id: nextId(state.nat1to1), ...data });
+  saveState(); closeModal(); toast('Saved'); renderApp();
+};
+window.delete1to1Nat = function(id) {
+  confirmDialog('Delete this 1-to-1 NAT rule?', () => {
+    state.nat1to1 = state.nat1to1.filter(n => n.id !== id);
+    saveState(); toast('Deleted'); renderApp();
+  });
+};
+
+registerRoute('network/wins-dns', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">WINS / DNS
+      <div class="actions"><button class="btn primary" onclick="saveDns()">Save</button></div>
+    </div>
+    <div class="page-subtitle">DNS servers used by the Firebox itself and pushed to DHCP clients</div>
+    <div class="panel">
+      <div class="panel-header">DNS Servers</div>
+      <div class="panel-body">
+        <div class="form-row"><label>Primary DNS Server</label><input type="text" id="dns-1" value="${escape(state.dns.servers[0] || '')}"></div>
+        <div class="form-row"><label>Secondary DNS Server</label><input type="text" id="dns-2" value="${escape(state.dns.servers[1] || '')}"></div>
+        <div class="form-row"><label>Tertiary DNS Server</label><input type="text" id="dns-3" value="${escape(state.dns.servers[2] || '')}"></div>
+        <div class="form-row"><label>Domain Name</label><input type="text" id="dns-domain" value="${escape(state.dns.domain)}"></div>
+      </div>
+    </div>`;
+}, ['Network', 'WINS/DNS']);
+
+window.saveDns = function() {
+  state.dns.servers = [document.getElementById('dns-1').value, document.getElementById('dns-2').value, document.getElementById('dns-3').value].filter(Boolean);
+  state.dns.domain = document.getElementById('dns-domain').value;
+  saveState();
+  toast('DNS settings saved');
+};
+
+registerRoute('network/vlan', placeholderPage('VLAN', 'Configure 802.1Q tagged VLAN interfaces.'), ['Network', 'VLAN']);
+registerRoute('network/bridge', placeholderPage('Bridge', 'Bridge two or more physical interfaces into a single L2 broadcast domain.'), ['Network', 'Bridge']);
+registerRoute('network/link-agg', placeholderPage('Link Aggregation', 'Bundle interfaces with LACP for throughput or redundancy.'), ['Network', 'Link Aggregation']);
+registerRoute('network/dynamic-routing', placeholderPage('Dynamic Routing', 'Configure RIP, OSPF, or BGP. Fireware uses Quagga-style config files for these protocols.'), ['Network', 'Dynamic Routing']);
+registerRoute('network/dyn-dns', placeholderPage('Dynamic DNS', 'Register a hostname with a DDNS provider so the Firebox is reachable when the External IP changes.'), ['Network', 'Dynamic DNS']);
+
+
+
+// ========================================================================
+// FIREWALL PAGES
+// ========================================================================
+registerRoute('firewall/policies', () => {
+  const sortedPolicies = [...state.policies].sort((a, b) => (a.autoOrder || 99) - (b.autoOrder || 99));
+  const rows = sortedPolicies.map(p => `
+    <tr>
+      <td>${p.autoOrder || '—'}</td>
+      <td>${p.type === 'proxy' ? '🛡️' : '📋'}</td>
+      <td>${escape(p.name)}</td>
+      <td><span class="text-small">${escape(p.proto)}</span></td>
+      <td>${fmtList(p.from)}</td>
+      <td>${fmtList(p.to)}</td>
+      <td>${p.action === 'Allow' ? '<span class="pill up">Allow</span>' : '<span class="pill down">Deny</span>'}</td>
+      <td>${p.enabled ? '<span class="pill up">On</span>' : '<span class="pill disabled">Off</span>'}</td>
+      <td class="actions-cell">
+        <a onclick="editPolicy(${p.id})">Edit</a>
+        <a onclick="togglePolicy(${p.id})">${p.enabled ? 'Disable' : 'Enable'}</a>
+        <a class="danger" onclick="deletePolicy(${p.id})">Delete</a>
+      </td>
+    </tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Firewall Policies
+      <div class="actions">
+        <button class="btn" onclick="togglePolicyOrder()">Order: ${state.policyOrder === 'auto' ? 'Auto' : 'Manual'}</button>
+        <button class="btn primary" onclick="editPolicy(0)">+ Add Policy</button>
+      </div>
+    </div>
+    <div class="page-subtitle">${state.policies.length} policies · ${state.policies.filter(p => p.enabled).length} active · Order: <strong>${state.policyOrder === 'auto' ? 'Auto-Order (specific first)' : 'Manual-Order'}</strong></div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>#</th><th></th><th>Name</th><th>Proto/Port</th><th>From</th><th>To</th><th>Action</th><th>State</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>
+    <div class="alert info text-small"><strong>Auto-Order</strong> places more specific policies first automatically. Switch to <strong>Manual-Order</strong> if you need explicit control over evaluation sequence (drag to reorder, not implemented in this simulator).</div>`;
+}, ['Firewall', 'Policies']);
+
+window.togglePolicyOrder = function() {
+  state.policyOrder = state.policyOrder === 'auto' ? 'manual' : 'auto';
+  saveState();
+  toast(`Policy order: ${state.policyOrder === 'auto' ? 'Auto-Order' : 'Manual-Order'}`);
+  renderApp();
+};
+
+window.togglePolicy = function(id) {
+  const p = state.policies.find(p => p.id === id);
+  p.enabled = !p.enabled;
+  saveState();
+  renderApp();
+};
+
+window.deletePolicy = function(id) {
+  const p = state.policies.find(p => p.id === id);
+  confirmDialog(`Delete policy "${p.name}"?`, () => {
+    state.policies = state.policies.filter(p => p.id !== id);
+    saveState(); toast('Policy deleted'); renderApp();
+  });
+};
+
+window.editPolicy = function(id) {
+  const isNew = !id;
+  const policy = id ? state.policies.find(p => p.id === id) : { name: '', type: 'packet-filter', proto: 'TCP/Any', from: ['Any-Trusted'], to: ['Any-External'], action: 'Allow', enabled: true, schedule: 'Always On', logging: false, autoOrder: 50 };
+  const aliasOpts = aliasNames();
+  const fromCheckboxes = aliasOpts.map(a => `<div class="checkbox-row"><input type="checkbox" id="pol-from-${a}" ${policy.from.includes(a) ? 'checked' : ''}><label for="pol-from-${a}">${escape(a)}</label></div>`).join('');
+  const toCheckboxes = aliasOpts.map(a => `<div class="checkbox-row"><input type="checkbox" id="pol-to-${a}" ${policy.to.includes(a) ? 'checked' : ''}><label for="pol-to-${a}">${escape(a)}</label></div>`).join('');
+  const schedOpts = scheduleNames().map(s => `<option ${policy.schedule === s ? 'selected' : ''}>${escape(s)}</option>`).join('');
+  modal({
+    title: isNew ? 'Add Policy' : `Edit Policy — ${escape(policy.name)}`,
+    wide: true,
+    body: `
+      <div class="tabs">
+        <button class="tab active" data-tab="pol-properties">Properties</button>
+        <button class="tab" data-tab="pol-advanced">Advanced</button>
+      </div>
+      <div id="pol-properties">
+        <div class="form-row"><label>Policy Name</label><input type="text" id="pol-name" value="${escape(policy.name)}" placeholder="e.g., Allow-RDP-to-Server"></div>
+        <div class="form-row"><label>Policy Type</label>
+          <select id="pol-type">
+            <option value="packet-filter" ${policy.type === 'packet-filter' ? 'selected' : ''}>Packet Filter (L3/L4)</option>
+            <option value="proxy" ${policy.type === 'proxy' ? 'selected' : ''}>Proxy (full content inspection)</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Protocol / Port</label><input type="text" id="pol-proto" value="${escape(policy.proto)}" placeholder="e.g., TCP/3389"></div>
+        <div class="form-row tall"><label>From (Source)</label><div>${fromCheckboxes}</div></div>
+        <div class="form-row tall"><label>To (Destination)</label><div>${toCheckboxes}</div></div>
+        <div class="form-row"><label>Action</label>
+          <select id="pol-action">
+            <option ${policy.action === 'Allow' ? 'selected' : ''}>Allow</option>
+            <option ${policy.action === 'Denied' ? 'selected' : ''}>Denied</option>
+            <option ${policy.action === 'Denied (send reset)' ? 'selected' : ''}>Denied (send reset)</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Schedule</label><select id="pol-schedule">${schedOpts}</select></div>
+        <div class="form-row"><label>Log allowed packets</label><div class="checkbox-row"><input type="checkbox" id="pol-log" ${policy.logging ? 'checked' : ''}><label for="pol-log">Send log message for matches</label></div></div>
+        <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="pol-enabled" ${policy.enabled ? 'checked' : ''}><label for="pol-enabled">Policy is active</label></div></div>
+      </div>
+      <div id="pol-advanced" class="hidden">
+        <div class="alert info text-small"><strong>Advanced settings</strong> for proxy policies include Application Control, IPS, GAV, WebBlocker, and Traffic Management bindings. Configure those services globally under Subscription Services, then enable per-policy here.</div>
+        <div class="form-row"><label>Apply Application Control</label><div class="checkbox-row"><input type="checkbox" ${policy.type === 'proxy' ? 'checked' : ''} ${policy.type !== 'proxy' ? 'disabled' : ''}><label>Inspect with Application Control</label></div></div>
+        <div class="form-row"><label>Apply IPS</label><div class="checkbox-row"><input type="checkbox" ${policy.type === 'proxy' ? 'checked' : ''} ${policy.type !== 'proxy' ? 'disabled' : ''}><label>Inspect with Intrusion Prevention</label></div></div>
+        <div class="form-row"><label>Apply Gateway AV</label><div class="checkbox-row"><input type="checkbox" ${policy.type === 'proxy' ? 'checked' : ''} ${policy.type !== 'proxy' ? 'disabled' : ''}><label>Scan with Gateway AntiVirus</label></div></div>
+        <div class="form-row"><label>Apply WebBlocker</label><div class="checkbox-row"><input type="checkbox" ${policy.type === 'proxy' ? 'checked' : ''} ${policy.type !== 'proxy' ? 'disabled' : ''}><label>Apply WebBlocker categories (HTTP/HTTPS only)</label></div></div>
+        <div class="form-row"><label>Bandwidth Limit</label><input type="text" placeholder="e.g., 10 Mbps (Traffic Mgmt)"></div>
+        <div class="form-row"><label>Auto-Order Position</label><input type="number" id="pol-order" value="${policy.autoOrder}"></div>
+      </div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="savePolicy(${id})">Save</button>`
+  });
+  document.querySelectorAll('.modal .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.modal .tab').forEach(t => t.classList.toggle('active', t === tab));
+      ['pol-properties', 'pol-advanced'].forEach(idd => document.getElementById(idd).classList.toggle('hidden', idd !== tab.dataset.tab));
+    });
+  });
+};
+
+window.savePolicy = function(id) {
+  const aliasOpts = aliasNames();
+  const data = {
+    name: document.getElementById('pol-name').value,
+    type: document.getElementById('pol-type').value,
+    proto: document.getElementById('pol-proto').value,
+    from: aliasOpts.filter(a => document.getElementById(`pol-from-${a}`)?.checked),
+    to: aliasOpts.filter(a => document.getElementById(`pol-to-${a}`)?.checked),
+    action: document.getElementById('pol-action').value,
+    schedule: document.getElementById('pol-schedule').value,
+    logging: document.getElementById('pol-log').checked,
+    enabled: document.getElementById('pol-enabled').checked,
+    autoOrder: parseInt(document.getElementById('pol-order')?.value || 50)
+  };
+  if (!data.name) { toast('Policy name is required'); return; }
+  if (data.from.length === 0 || data.to.length === 0) { toast('Pick at least one source and destination'); return; }
+  if (id) Object.assign(state.policies.find(p => p.id === id), data);
+  else state.policies.push({ id: nextId(state.policies), ...data });
+  saveState(); closeModal(); toast('Policy saved'); renderApp();
+};
+
+registerRoute('firewall/snat', () => {
+  const rows = state.snat.length === 0 ? '<tr><td colspan="6" class="text-center text-muted">No SNAT actions configured. Click <strong>Add</strong> to publish an internal service to the internet.</td></tr>' :
+    state.snat.map(s => `
+      <tr>
+        <td>${escape(s.name)}</td>
+        <td class="mono">${escape(s.externalIp)}:${s.externalPort}</td>
+        <td class="mono">${escape(s.internalIp)}:${s.internalPort}</td>
+        <td>${escape(s.protocol)}</td>
+        <td>${s.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+        <td class="actions-cell"><a onclick="editSnat(${s.id})">Edit</a><a class="danger" onclick="deleteSnat(${s.id})">Delete</a></td>
+      </tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">SNAT (Static NAT)
+      <div class="actions"><button class="btn primary" onclick="editSnat(0)">+ Add SNAT Action</button></div>
+    </div>
+    <div class="page-subtitle">Inbound port forwarding — publish internal servers to the internet</div>
+    <div class="alert info text-small"><strong>SNAT</strong> maps an external IP and port to an internal host. Bind a SNAT action to an inbound policy (e.g., HTTPS-inbound) under Firewall → Policies. Each SNAT action can target one or many internal hosts (with load balancing).</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>Name</th><th>External</th><th>Internal Target</th><th>Protocol</th><th>State</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>`;
+}, ['Firewall', 'SNAT']);
+
+window.editSnat = function(id) {
+  const rule = id ? state.snat.find(s => s.id === id) : { name: '', externalIp: '', externalPort: 443, internalIp: '', internalPort: 443, protocol: 'TCP', enabled: true };
+  modal({
+    title: id ? 'Edit SNAT Action' : 'Add SNAT Action',
+    body: `
+      <div class="form-row"><label>Name</label><input type="text" id="sn-name" value="${escape(rule.name)}" placeholder="e.g., HTTPS-to-Webserver"></div>
+      <div class="form-row"><label>External IP</label><input type="text" id="sn-ext-ip" value="${escape(rule.externalIp)}" placeholder="e.g., 203.0.113.10"></div>
+      <div class="form-row"><label>External Port</label><input type="number" id="sn-ext-port" value="${rule.externalPort}"></div>
+      <div class="form-row"><label>Internal IP</label><input type="text" id="sn-int-ip" value="${escape(rule.internalIp)}" placeholder="e.g., 10.0.2.20"></div>
+      <div class="form-row"><label>Internal Port</label><input type="number" id="sn-int-port" value="${rule.internalPort}"></div>
+      <div class="form-row"><label>Protocol</label>
+        <select id="sn-proto">
+          <option ${rule.protocol === 'TCP' ? 'selected' : ''}>TCP</option>
+          <option ${rule.protocol === 'UDP' ? 'selected' : ''}>UDP</option>
+          <option ${rule.protocol === 'TCP/UDP' ? 'selected' : ''}>TCP/UDP</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="sn-enabled" ${rule.enabled ? 'checked' : ''}><label for="sn-enabled">Active</label></div></div>
+      <div class="form-row"><div></div><div class="help">After saving, create or edit an inbound policy under Firewall → Policies and bind it to this SNAT action.</div></div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveSnat(${id})">Save</button>`
+  });
+};
+window.saveSnat = function(id) {
+  const data = {
+    name: document.getElementById('sn-name').value,
+    externalIp: document.getElementById('sn-ext-ip').value,
+    externalPort: parseInt(document.getElementById('sn-ext-port').value),
+    internalIp: document.getElementById('sn-int-ip').value,
+    internalPort: parseInt(document.getElementById('sn-int-port').value),
+    protocol: document.getElementById('sn-proto').value,
+    enabled: document.getElementById('sn-enabled').checked
+  };
+  if (!data.name || !data.externalIp || !data.internalIp) { toast('Name and IPs required'); return; }
+  if (id) Object.assign(state.snat.find(s => s.id === id), data);
+  else state.snat.push({ id: nextId(state.snat), ...data });
+  saveState(); closeModal(); toast('SNAT saved'); renderApp();
+};
+window.deleteSnat = function(id) {
+  confirmDialog('Delete this SNAT action?', () => {
+    state.snat = state.snat.filter(s => s.id !== id);
+    saveState(); toast('Deleted'); renderApp();
+  });
+};
+
+registerRoute('firewall/aliases', () => {
+  const rows = state.aliases.map((a, i) => `
+    <tr>
+      <td>${escape(a.name)}</td>
+      <td>${fmtList(a.members)}</td>
+      <td>${escape(a.desc || '')}</td>
+      <td>${a.readonly ? '<span class="pill info">Built-in</span>' : '<span class="pill up">Custom</span>'}</td>
+      <td class="actions-cell">${a.readonly ? '<span class="text-muted">—</span>' : `<a onclick="editAlias(${i})">Edit</a><a class="danger" onclick="deleteAlias(${i})">Delete</a>`}</td>
+    </tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Aliases
+      <div class="actions"><button class="btn primary" onclick="editAlias(-1)">+ Add Alias</button></div>
+    </div>
+    <div class="page-subtitle">Reusable named groups of IPs, networks, FQDNs, users, or interfaces</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>Name</th><th>Members</th><th>Description</th><th>Type</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>`;
+}, ['Firewall', 'Aliases']);
+
+window.editAlias = function(idx) {
+  const isNew = idx === -1;
+  const a = isNew ? { name: '', members: [], desc: '', readonly: false } : state.aliases[idx];
+  modal({
+    title: isNew ? 'Add Alias' : `Edit Alias — ${escape(a.name)}`,
+    body: `
+      <div class="form-row"><label>Name</label><input type="text" id="al-name" value="${escape(a.name)}" placeholder="e.g., Servers-Internal"></div>
+      <div class="form-row"><label>Description</label><input type="text" id="al-desc" value="${escape(a.desc)}"></div>
+      <div class="form-row tall"><label>Members</label><textarea id="al-members" rows="6" placeholder="One per line: IPs, CIDR networks, FQDNs, or user/group names">${escape((a.members || []).join('\n'))}</textarea></div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveAlias(${idx})">Save</button>`
+  });
+};
+window.saveAlias = function(idx) {
+  const data = {
+    name: document.getElementById('al-name').value,
+    desc: document.getElementById('al-desc').value,
+    members: document.getElementById('al-members').value.split('\n').map(s => s.trim()).filter(Boolean),
+    readonly: false
+  };
+  if (!data.name) { toast('Alias name required'); return; }
+  if (idx === -1) state.aliases.push(data);
+  else state.aliases[idx] = data;
+  saveState(); closeModal(); toast('Alias saved'); renderApp();
+};
+window.deleteAlias = function(idx) {
+  confirmDialog(`Delete alias "${state.aliases[idx].name}"?`, () => {
+    state.aliases.splice(idx, 1);
+    saveState(); toast('Deleted'); renderApp();
+  });
+};
+
+registerRoute('firewall/schedules', () => {
+  const rows = state.schedules.map((s, i) => `
+    <tr>
+      <td>${escape(s.name)}</td>
+      <td>${escape(s.desc)}</td>
+      <td>${s.readonly ? '<span class="pill info">Built-in</span>' : '<span class="pill up">Custom</span>'}</td>
+      <td class="actions-cell">${s.readonly ? '<span class="text-muted">—</span>' : `<a onclick="editSchedule(${i})">Edit</a><a class="danger" onclick="deleteSchedule(${i})">Delete</a>`}</td>
+    </tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Schedules
+      <div class="actions"><button class="btn primary" onclick="editSchedule(-1)">+ Add Schedule</button></div>
+    </div>
+    <div class="page-subtitle">Reusable time windows that limit when a policy is active</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>Name</th><th>Description</th><th>Type</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>`;
+}, ['Firewall', 'Schedules']);
+
+window.editSchedule = function(idx) {
+  const isNew = idx === -1;
+  const s = isNew ? { name: '', desc: '', readonly: false } : state.schedules[idx];
+  modal({
+    title: isNew ? 'Add Schedule' : `Edit Schedule — ${escape(s.name)}`,
+    body: `
+      <div class="form-row"><label>Name</label><input type="text" id="sch-name" value="${escape(s.name)}" placeholder="e.g., After-Hours"></div>
+      <div class="form-row"><label>Description</label><input type="text" id="sch-desc" value="${escape(s.desc)}" placeholder="e.g., Mon-Fri 18:00-08:00"></div>
+      <div class="form-row tall"><label>Schedule Editor</label>
+        <div>
+          <div class="alert info text-small">In the real Web UI, this opens a 7×24 grid where you toggle hours per day. For this simulator, just describe the schedule in the Description field.</div>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveSchedule(${idx})">Save</button>`
+  });
+};
+window.saveSchedule = function(idx) {
+  const data = { name: document.getElementById('sch-name').value, desc: document.getElementById('sch-desc').value, readonly: false };
+  if (!data.name) { toast('Schedule name required'); return; }
+  if (idx === -1) state.schedules.push(data);
+  else state.schedules[idx] = data;
+  saveState(); closeModal(); toast('Schedule saved'); renderApp();
+};
+window.deleteSchedule = function(idx) {
+  confirmDialog(`Delete schedule "${state.schedules[idx].name}"?`, () => {
+    state.schedules.splice(idx, 1);
+    saveState(); toast('Deleted'); renderApp();
+  });
+};
+
+registerRoute('firewall/proxy-actions', placeholderPage('Proxy Actions', 'Predefined sets of proxy filters (e.g., Default-HTTP-Client, Default-HTTPS-Client). Modify per-policy via the Properties tab on a proxy policy.'), ['Firewall', 'Proxy Actions']);
+registerRoute('firewall/quotas', placeholderPage('Quotas', 'Per-user bandwidth and time quotas — pair with authentication.'), ['Firewall', 'Quotas']);
+
+// ========================================================================
+// SUBSCRIPTION SERVICES PAGES
+// ========================================================================
+registerRoute('services/overview', () => {
+  const services = [
+    { key: 'gav', name: 'Gateway AntiVirus', desc: 'Signature-based AV scan on HTTP, FTP, SMTP, IMAP, POP3' },
+    { key: 'iav', name: 'IntelligentAV', desc: 'ML-based detection of unknown / polymorphic malware' },
+    { key: 'apt', name: 'APT Blocker', desc: 'Cloud sandbox detonation of suspicious files' },
+    { key: 'ips', name: 'Intrusion Prevention', desc: 'Signature-based exploit / attack pattern blocking' },
+    { key: 'webblocker', name: 'WebBlocker', desc: 'URL category filtering — 130+ categories' },
+    { key: 'appcontrol', name: 'Application Control', desc: 'Identify and control 1,800+ applications by signature' },
+    { key: 'spamblocker', name: 'spamBlocker', desc: 'Email reputation and content filtering' },
+    { key: 'red', name: 'Reputation Enabled Defense', desc: 'Cloud-based URL reputation lookup' },
+    { key: 'botnet', name: 'Botnet Detection', desc: 'Block traffic to known botnet C2 sites' },
+    { key: 'geo', name: 'Geolocation', desc: 'Block traffic to/from specific countries' },
+    { key: 'dlp', name: 'Data Loss Prevention', desc: 'Pattern-match sensitive data leaving the network' },
+    { key: 'dnswatch', name: 'DNSWatch', desc: 'Cloud DNS filtering against malicious domains' }
+  ];
+  const cards = services.map(s => {
+    const svc = state.services[s.key];
+    return `
+      <div class="stat-card" style="border-left-color: ${svc.enabled ? 'var(--success)' : 'var(--text-3)'}">
+        <div class="stat-label">${escape(s.name)}</div>
+        <div style="font-size:13px; color: var(--text-1); margin: 4px 0;">${escape(s.desc)}</div>
+        <div class="flex-between mt-8">
+          <span>${svc.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</span>
+          <a href="#services/${s.key}" style="color:var(--link); font-size:12px">Configure →</a>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Subscription Services Overview</div>
+    <div class="page-subtitle">All licensed security services for this Firebox</div>
+    <div class="grid">${cards}</div>`;
+}, ['Subscription Services', 'Overview']);
+
+function makeServicePage(key, title, fields) {
+  return () => {
+    const svc = state.services[key];
+    document.getElementById('page').innerHTML = `
+      <div class="page-title">${escape(title)}
+        <div class="actions"><button class="btn primary" onclick="saveService('${key}')">Save</button></div>
+      </div>
+      <div class="page-subtitle">${escape(fields.subtitle || '')}</div>
+      <div class="panel">
+        <div class="panel-header">${escape(title)} Settings</div>
+        <div class="panel-body">
+          <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="sv-enabled" ${svc.enabled ? 'checked' : ''}><label for="sv-enabled">Activate ${escape(title)}</label></div></div>
+          ${fields.html(svc)}
+        </div>
+      </div>
+      ${fields.extra || ''}`;
+  };
+}
+
+window.saveService = function(key) {
+  const svc = state.services[key];
+  svc.enabled = document.getElementById('sv-enabled').checked;
+  document.querySelectorAll('[data-svc-field]').forEach(el => {
+    const field = el.dataset.svcField;
+    if (el.type === 'checkbox') svc[field] = el.checked;
+    else if (el.type === 'number') svc[field] = parseInt(el.value);
+    else svc[field] = el.value;
+  });
+  saveState();
+  toast(`${key.toUpperCase()} settings saved`);
+  renderApp();
+};
+
+registerRoute('services/gav', makeServicePage('gav', 'Gateway AntiVirus', {
+  subtitle: 'Signature-based virus scanning on proxy traffic',
+  html: (svc) => `
+    <div class="form-row"><label>Action on Detection</label>
+      <select data-svc-field="action">
+        <option ${svc.action === 'Drop' ? 'selected' : ''}>Drop</option>
+        <option ${svc.action === 'Allow' ? 'selected' : ''}>Allow</option>
+        <option ${svc.action === 'Quarantine' ? 'selected' : ''}>Quarantine</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Send Alarm</label><div class="checkbox-row"><input type="checkbox" data-svc-field="alarm" ${svc.alarm ? 'checked' : ''}><label>Notify on virus detection</label></div></div>
+    <div class="form-row"><label>Max Scan Size (MB)</label><input type="number" data-svc-field="scanLimit" value="${svc.scanLimit}"></div>
+    <div class="form-row"><label>Signatures Loaded</label><span class="mono">${escape(svc.signatures)}</span></div>
+    <div class="form-row"><label>Last Update</label><span class="mono">${escape(svc.lastUpdate)}</span></div>
+    <div class="form-row"><label>Apply To</label><span class="text-muted">HTTP, FTP, SMTP, IMAP, POP3, TCP-UDP proxies</span></div>
+  `
+}), ['Subscription Services', 'Gateway AntiVirus']);
+
+registerRoute('services/iav', makeServicePage('iav', 'IntelligentAV', {
+  subtitle: 'Machine-learning detection of polymorphic / unknown malware',
+  html: (svc) => `
+    <div class="form-row"><label>Action on Detection</label>
+      <select data-svc-field="action">
+        <option ${svc.action === 'Drop' ? 'selected' : ''}>Drop</option>
+        <option ${svc.action === 'Allow' ? 'selected' : ''}>Allow</option>
+        <option ${svc.action === 'Quarantine' ? 'selected' : ''}>Quarantine</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Last Update</label><span class="mono">${escape(svc.lastUpdate)}</span></div>
+    <div class="alert info text-small">IntelligentAV runs as a complement to Gateway AntiVirus, catching polymorphic threats that don't match signatures.</div>
+  `
+}), ['Subscription Services', 'IntelligentAV']);
+
+registerRoute('services/apt', makeServicePage('apt', 'APT Blocker', {
+  subtitle: 'Cloud sandbox detonation for advanced persistent threats',
+  html: (svc) => `
+    <div class="form-row"><label>Sandbox</label>
+      <select data-svc-field="mode">
+        <option ${svc.mode === 'Cloud Sandbox' ? 'selected' : ''}>Cloud Sandbox</option>
+        <option ${svc.mode === 'On-Premise' ? 'selected' : ''}>On-Premise (rare)</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Action on Detection</label>
+      <select data-svc-field="action">
+        <option ${svc.action === 'Drop' ? 'selected' : ''}>Drop</option>
+        <option ${svc.action === 'Allow' ? 'selected' : ''}>Allow</option>
+        <option ${svc.action === 'Quarantine' ? 'selected' : ''}>Quarantine</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Sensitivity</label>
+      <select data-svc-field="sensitivity">
+        <option ${svc.sensitivity === 'Low' ? 'selected' : ''}>Low</option>
+        <option ${svc.sensitivity === 'Medium' ? 'selected' : ''}>Medium</option>
+        <option ${svc.sensitivity === 'High' ? 'selected' : ''}>High</option>
+      </select>
+    </div>
+  `
+}), ['Subscription Services', 'APT Blocker']);
+
+registerRoute('services/ips', makeServicePage('ips', 'Intrusion Prevention Service', {
+  subtitle: 'Signature-based exploit and attack pattern blocking',
+  html: (svc) => `
+    <div class="form-row"><label>Sensitivity</label>
+      <select data-svc-field="sensitivity">
+        <option ${svc.sensitivity === 'Low' ? 'selected' : ''}>Low</option>
+        <option ${svc.sensitivity === 'Medium' ? 'selected' : ''}>Medium</option>
+        <option ${svc.sensitivity === 'High' ? 'selected' : ''}>High</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Critical Threats</label>
+      <select data-svc-field="criticalAction"><option ${svc.criticalAction === 'Drop' ? 'selected' : ''}>Drop</option><option ${svc.criticalAction === 'Block' ? 'selected' : ''}>Block</option><option ${svc.criticalAction === 'Allow' ? 'selected' : ''}>Allow</option></select>
+    </div>
+    <div class="form-row"><label>High Threats</label>
+      <select data-svc-field="highAction"><option ${svc.highAction === 'Drop' ? 'selected' : ''}>Drop</option><option ${svc.highAction === 'Block' ? 'selected' : ''}>Block</option><option ${svc.highAction === 'Allow' ? 'selected' : ''}>Allow</option></select>
+    </div>
+    <div class="form-row"><label>Medium Threats</label>
+      <select data-svc-field="medAction"><option ${svc.medAction === 'Drop' ? 'selected' : ''}>Drop</option><option ${svc.medAction === 'Block' ? 'selected' : ''}>Block</option><option ${svc.medAction === 'Allow' ? 'selected' : ''}>Allow</option></select>
+    </div>
+    <div class="form-row"><label>Low Threats</label>
+      <select data-svc-field="lowAction"><option ${svc.lowAction === 'Drop' ? 'selected' : ''}>Drop</option><option ${svc.lowAction === 'Block' ? 'selected' : ''}>Block</option><option ${svc.lowAction === 'Allow' ? 'selected' : ''}>Allow</option></select>
+    </div>
+    <div class="form-row"><label>Signatures Loaded</label><span class="mono">${escape(svc.signatures)}</span></div>
+    <div class="form-row"><label>Last Update</label><span class="mono">${escape(svc.lastUpdate)}</span></div>
+  `
+}), ['Subscription Services', 'IPS']);
+
+registerRoute('services/webblocker', makeServicePage('webblocker', 'WebBlocker', {
+  subtitle: 'URL category filtering — block sites by 130+ categories',
+  html: (svc) => `
+    <div class="form-row"><label>Profile</label><input type="text" data-svc-field="profile" value="${escape(svc.profile)}"></div>
+    <div class="form-row"><label>Engine</label>
+      <select data-svc-field="engine">
+        <option ${svc.engine === 'Cloud' ? 'selected' : ''}>Cloud (recommended)</option>
+        <option ${svc.engine === 'WebBlocker Server' ? 'selected' : ''}>WebBlocker Server (legacy)</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Categories Active</label><span class="mono">${svc.categories}</span></div>
+    <div class="alert info text-small">In the real Web UI, this page has a 6-tab editor for category selection (Adult, Bandwidth, Business, etc.). Bind the WebBlocker profile to your HTTP and HTTPS proxy policies.</div>
+  `
+}), ['Subscription Services', 'WebBlocker']);
+
+registerRoute('services/appcontrol', makeServicePage('appcontrol', 'Application Control', {
+  subtitle: 'Identify and control 1,800+ applications regardless of port',
+  html: (svc) => `
+    <div class="form-row"><label>Mode</label>
+      <select data-svc-field="mode">
+        <option ${svc.mode === 'Block by Category' ? 'selected' : ''}>Block by Category</option>
+        <option ${svc.mode === 'Block by Application' ? 'selected' : ''}>Block by Application</option>
+        <option ${svc.mode === 'Monitor Only' ? 'selected' : ''}>Monitor Only</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Signatures Loaded</label><span class="mono">${escape(svc.signatures)}</span></div>
+    <div class="alert info text-small">Common categories: Social Networking, Streaming Media, P2P, Anonymizer, Remote Access, Voice over IP. Bind to proxy policies for enforcement.</div>
+  `
+}), ['Subscription Services', 'Application Control']);
+
+registerRoute('services/spamblocker', makeServicePage('spamblocker', 'spamBlocker', {
+  subtitle: 'Email reputation and content filtering',
+  html: (svc) => `
+    <div class="form-row"><label>Action</label>
+      <select data-svc-field="action">
+        <option ${svc.action === 'Quarantine' ? 'selected' : ''}>Quarantine</option>
+        <option ${svc.action === 'Tag' ? 'selected' : ''}>Tag (mark subject)</option>
+        <option ${svc.action === 'Drop' ? 'selected' : ''}>Drop</option>
+        <option ${svc.action === 'Deny' ? 'selected' : ''}>Deny</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Confidence Threshold</label>
+      <select data-svc-field="confidence">
+        <option ${svc.confidence === 'Low' ? 'selected' : ''}>Low (more aggressive)</option>
+        <option ${svc.confidence === 'Medium' ? 'selected' : ''}>Medium</option>
+        <option ${svc.confidence === 'High' ? 'selected' : ''}>High (more conservative)</option>
+      </select>
+    </div>
+    <div class="alert info text-small">Apply spamBlocker to SMTP, IMAP, and POP3 proxy policies.</div>
+  `
+}), ['Subscription Services', 'spamBlocker']);
+
+registerRoute('services/red', makeServicePage('red', 'Reputation Enabled Defense', {
+  subtitle: 'Cloud-based URL reputation lookup — pre-filter known good and bad URLs',
+  html: (svc) => `
+    <div class="form-row"><label>Threshold</label>
+      <select data-svc-field="threshold">
+        <option ${svc.threshold === 'Default' ? 'selected' : ''}>Default</option>
+        <option ${svc.threshold === 'Strict' ? 'selected' : ''}>Strict</option>
+        <option ${svc.threshold === 'Permissive' ? 'selected' : ''}>Permissive</option>
+      </select>
+    </div>
+    <div class="alert info text-small">RED queries WatchGuard's reputation cloud to bypass scans on known-good URLs and immediately block known-bad ones — improving performance and threat coverage simultaneously.</div>
+  `
+}), ['Subscription Services', 'RED']);
+
+registerRoute('services/botnet', makeServicePage('botnet', 'Botnet Detection', {
+  subtitle: 'Block traffic to known botnet command-and-control servers',
+  html: (svc) => `
+    <div class="form-row"><label>Action</label>
+      <select data-svc-field="action">
+        <option ${svc.action === 'Drop' ? 'selected' : ''}>Drop</option>
+        <option ${svc.action === 'Block' ? 'selected' : ''}>Block (add to Blocked Sites)</option>
+        <option ${svc.action === 'Log' ? 'selected' : ''}>Log only</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Send Alarm</label><div class="checkbox-row"><input type="checkbox" data-svc-field="alarm" ${svc.alarm ? 'checked' : ''}><label>Notify on detection</label></div></div>
+  `
+}), ['Subscription Services', 'Botnet']);
+
+registerRoute('services/geo', () => {
+  const svc = state.services.geo;
+  const countries = [
+    {code: 'AF', name: 'Afghanistan'}, {code: 'CN', name: 'China'}, {code: 'CU', name: 'Cuba'},
+    {code: 'IR', name: 'Iran'}, {code: 'IQ', name: 'Iraq'}, {code: 'KP', name: 'North Korea'},
+    {code: 'RU', name: 'Russia'}, {code: 'SY', name: 'Syria'}, {code: 'VE', name: 'Venezuela'},
+    {code: 'BY', name: 'Belarus'}, {code: 'MM', name: 'Myanmar'}, {code: 'PK', name: 'Pakistan'}
+  ];
+  const checkboxes = countries.map(c => `<div class="checkbox-row" style="display:inline-flex; min-width:200px"><input type="checkbox" id="geo-${c.code}" ${svc.blockedCountries.includes(c.code) ? 'checked' : ''}><label for="geo-${c.code}">${escape(c.code)} — ${escape(c.name)}</label></div>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Geolocation
+      <div class="actions"><button class="btn primary" onclick="saveGeo()">Save</button></div>
+    </div>
+    <div class="page-subtitle">Block traffic to/from specific countries</div>
+    <div class="panel">
+      <div class="panel-body">
+        <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="geo-enabled" ${svc.enabled ? 'checked' : ''}><label for="geo-enabled">Activate Geolocation</label></div></div>
+        <div class="form-row tall"><label>Blocked Countries</label><div style="display:flex; flex-wrap:wrap; gap:6px">${checkboxes}</div></div>
+        <div class="form-row"><div></div><div class="help">In the real Web UI, all 240+ countries are listed. Common choices for blocking are sanctioned regions and high-threat origins.</div></div>
+      </div>
+    </div>`;
+}, ['Subscription Services', 'Geolocation']);
+
+window.saveGeo = function() {
+  const countries = ['AF','CN','CU','IR','IQ','KP','RU','SY','VE','BY','MM','PK'];
+  state.services.geo.enabled = document.getElementById('geo-enabled').checked;
+  state.services.geo.blockedCountries = countries.filter(c => document.getElementById(`geo-${c}`).checked);
+  saveState(); toast('Geolocation saved'); renderApp();
+};
+
+registerRoute('services/dlp', makeServicePage('dlp', 'Data Loss Prevention', {
+  subtitle: 'Pattern-match sensitive data leaving the network',
+  html: (svc) => `
+    <div class="form-row"><label>Sensors</label><span>${svc.sensors} configured</span></div>
+    <div class="alert info text-small">DLP sensors detect patterns like SSN, credit card numbers, and custom regex. Configure sensors and bind them to outbound proxy policies.</div>
+  `
+}), ['Subscription Services', 'DLP']);
+
+registerRoute('services/dnswatch', () => {
+  const svc = state.services.dnswatch;
+  const cats = ['Malware', 'Phishing', 'Cryptomining', 'Adult Content', 'Drugs', 'Hate Speech', 'Gambling', 'Weapons'];
+  const checkboxes = cats.map(c => `<div class="checkbox-row" style="min-width:180px"><input type="checkbox" id="dw-${c.replace(/\s/g, '_')}" ${svc.contentCategories.includes(c) ? 'checked' : ''}><label for="dw-${c.replace(/\s/g, '_')}">${escape(c)}</label></div>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">DNSWatch
+      <div class="actions"><button class="btn primary" onclick="saveDnswatch()">Save</button></div>
+    </div>
+    <div class="page-subtitle">Cloud DNS filtering against malicious domain reputation</div>
+    <div class="panel"><div class="panel-body">
+      <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="dw-enabled" ${svc.enabled ? 'checked' : ''}><label for="dw-enabled">Activate DNSWatch</label></div></div>
+      <div class="form-row tall"><label>Block Categories</label><div style="display:flex; flex-wrap:wrap; gap:8px">${checkboxes}</div></div>
+      <div class="form-row"><div></div><div class="help">DNSWatch filters DNS queries before TCP connection — providing an early defense layer.</div></div>
+    </div></div>`;
+}, ['Subscription Services', 'DNSWatch']);
+
+window.saveDnswatch = function() {
+  const cats = ['Malware', 'Phishing', 'Cryptomining', 'Adult Content', 'Drugs', 'Hate Speech', 'Gambling', 'Weapons'];
+  state.services.dnswatch.enabled = document.getElementById('dw-enabled').checked;
+  state.services.dnswatch.contentCategories = cats.filter(c => document.getElementById(`dw-${c.replace(/\s/g, '_')}`).checked);
+  saveState(); toast('DNSWatch saved'); renderApp();
+};
+
+registerRoute('services/default-threat', () => {
+  const dt = state.defaultThreat;
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Default Threat Protection
+      <div class="actions"><button class="btn primary" onclick="saveDefaultThreat()">Save</button></div>
+    </div>
+    <div class="page-subtitle">Built-in protections against common L3/L4 attack patterns — enabled by default on every Firebox</div>
+    <div class="panel"><div class="panel-body">
+      <div class="form-row"><label>Block Spoofing Attacks</label><div class="checkbox-row"><input type="checkbox" id="dt-spoof" ${dt.spoofingAttacks ? 'checked' : ''}><label>Drop packets with spoofed source addresses</label></div></div>
+      <div class="form-row"><label>Block IP Source Route</label><div class="checkbox-row"><input type="checkbox" id="dt-route" ${dt.ipSourceRoute ? 'checked' : ''}><label>Drop packets that specify their own routing</label></div></div>
+      <div class="form-row"><label>Block Ping of Death</label><div class="checkbox-row"><input type="checkbox" id="dt-pod" ${dt.pingOfDeath ? 'checked' : ''}><label>Drop oversized ICMP echo</label></div></div>
+      <div class="form-row"><label>Block SMURF Attack</label><div class="checkbox-row"><input type="checkbox" id="dt-smurf" ${dt.smurf ? 'checked' : ''}><label>Drop directed broadcast ICMP</label></div></div>
+      <div class="form-row"><label>Block IP-Based DoS</label><div class="checkbox-row"><input type="checkbox" id="dt-dos" ${dt.ipBasedDoS ? 'checked' : ''}><label>Rate-limit per source IP</label></div></div>
+      <div class="form-row"><label>Block Port Scans</label><div class="checkbox-row"><input type="checkbox" id="dt-scan" ${dt.portScan ? 'checked' : ''}><label>Detect and block port scanning</label></div></div>
+      <div class="form-row"><label>Block Distributed DoS</label><div class="checkbox-row"><input type="checkbox" id="dt-ddos" ${dt.distDoS ? 'checked' : ''}><label>Rate-limit by sliding window</label></div></div>
+      <div class="form-row"><label>Session Limits</label><div class="checkbox-row"><input type="checkbox" id="dt-session" ${dt.sessionLimit ? 'checked' : ''}><label>Limit concurrent sessions per source</label></div></div>
+    </div></div>`;
+}, ['Subscription Services', 'Default Threat Protection']);
+
+window.saveDefaultThreat = function() {
+  const map = { 'dt-spoof': 'spoofingAttacks', 'dt-route': 'ipSourceRoute', 'dt-pod': 'pingOfDeath', 'dt-smurf': 'smurf', 'dt-dos': 'ipBasedDoS', 'dt-scan': 'portScan', 'dt-ddos': 'distDoS', 'dt-session': 'sessionLimit' };
+  Object.entries(map).forEach(([id, key]) => state.defaultThreat[key] = document.getElementById(id).checked);
+  saveState(); toast('Default Threat Protection saved'); renderApp();
+};
+
+
+
+// ========================================================================
+// AUTHENTICATION PAGES
+// ========================================================================
+registerRoute('auth/servers', () => {
+  const rows = state.authServers.map(s => `
+    <tr>
+      <td>${escape(s.name)}</td>
+      <td><span class="pill info">${escape(s.type)}</span></td>
+      <td class="mono">${escape(s.primary || '—')}</td>
+      <td>${s.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+      <td class="actions-cell">${s.readonly ? '<span class="text-muted">—</span>' : `<a onclick="editAuthServer(${s.id})">Edit</a><a class="danger" onclick="deleteAuthServer(${s.id})">Delete</a>`}</td>
+    </tr>`).join('');
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Authentication Servers
+      <div class="actions"><button class="btn primary" onclick="editAuthServer(0)">+ Add Server</button></div>
+    </div>
+    <div class="page-subtitle">Configure where the Firebox sends user authentication requests</div>
+    <div class="panel"><div class="panel-body flush">
+      <table class="data">
+        <thead><tr><th>Name</th><th>Type</th><th>Primary Server</th><th>State</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>
+    <div class="alert info text-small"><strong>Firebox-DB</strong> is the local user database (always present, can't be deleted). Add <strong>Active Directory</strong> for transparent SSO, <strong>RADIUS</strong> for AuthPoint MFA, or <strong>SAML</strong> for federation.</div>`;
+}, ['Authentication', 'Servers']);
+
+window.editAuthServer = function(id) {
+  const isNew = !id;
+  const s = id ? state.authServers.find(s => s.id === id) : { type: 'Active Directory', name: '', enabled: true, primary: '', secondary: '', searchBase: '', sharedSecret: '', port: 389 };
+  modal({
+    title: isNew ? 'Add Authentication Server' : `Edit Server — ${escape(s.name)}`,
+    body: `
+      <div class="form-row"><label>Server Type</label>
+        <select id="as-type">
+          <option ${s.type === 'Active Directory' ? 'selected' : ''}>Active Directory</option>
+          <option ${s.type === 'LDAP' ? 'selected' : ''}>LDAP</option>
+          <option ${s.type === 'RADIUS' ? 'selected' : ''}>RADIUS</option>
+          <option ${s.type === 'SecurID' ? 'selected' : ''}>SecurID</option>
+          <option ${s.type === 'SAML' ? 'selected' : ''}>SAML</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Name</label><input type="text" id="as-name" value="${escape(s.name)}" placeholder="e.g., AD-Primary"></div>
+      <div class="form-row"><label>Primary Server IP/FQDN</label><input type="text" id="as-primary" value="${escape(s.primary)}" placeholder="e.g., 10.0.1.10 or dc01.example.local"></div>
+      <div class="form-row"><label>Secondary Server</label><input type="text" id="as-secondary" value="${escape(s.secondary)}" placeholder="(optional)"></div>
+      <div class="form-row"><label>Port</label><input type="number" id="as-port" value="${s.port || 389}"></div>
+      <div class="form-row"><label>Shared Secret</label><input type="password" id="as-secret" value="${escape(s.sharedSecret)}" placeholder="(RADIUS only)"></div>
+      <div class="form-row"><label>Search Base</label><input type="text" id="as-base" value="${escape(s.searchBase)}" placeholder="(LDAP/AD: e.g., DC=example,DC=local)"></div>
+      <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="as-enabled" ${s.enabled ? 'checked' : ''}><label for="as-enabled">Active</label></div></div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveAuthServer(${id})">Save</button>`
+  });
+};
+window.saveAuthServer = function(id) {
+  const data = {
+    type: document.getElementById('as-type').value,
+    name: document.getElementById('as-name').value,
+    primary: document.getElementById('as-primary').value,
+    secondary: document.getElementById('as-secondary').value,
+    port: parseInt(document.getElementById('as-port').value),
+    sharedSecret: document.getElementById('as-secret').value,
+    searchBase: document.getElementById('as-base').value,
+    enabled: document.getElementById('as-enabled').checked,
+    readonly: false
+  };
+  if (!data.name || !data.primary) { toast('Name and primary server required'); return; }
+  if (id) Object.assign(state.authServers.find(s => s.id === id), data);
+  else state.authServers.push({ id: nextId(state.authServers), ...data });
+  saveState(); closeModal(); toast('Auth server saved'); renderApp();
+};
+window.deleteAuthServer = function(id) {
+  confirmDialog('Delete this authentication server?', () => {
+    state.authServers = state.authServers.filter(s => s.id !== id);
+    saveState(); toast('Deleted'); renderApp();
+  });
+};
+
+registerRoute('auth/users-groups', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Authorized Users and Groups
+      <div class="actions"><button class="btn primary" onclick="editUser(-1)">+ Add User</button></div>
+    </div>
+    <div class="page-subtitle">Local Firebox-DB users and groups (for auth servers like AD, see Authentication → Servers)</div>
+    <div class="panel">
+      <div class="panel-header">Users</div>
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Username</th><th>Full Name</th><th>Group</th><th>State</th><th></th></tr></thead>
+          <tbody>
+            ${state.authUsers.map((u, i) => `
+              <tr>
+                <td>${escape(u.name)}</td>
+                <td>${escape(u.fullName)}</td>
+                <td>${escape(u.group)}</td>
+                <td>${u.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+                <td class="actions-cell">${u.readonly ? '<span class="text-muted">—</span>' : `<a onclick="editUser(${i})">Edit</a><a class="danger" onclick="deleteUser(${i})">Delete</a>`}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">Groups</div>
+      <div class="panel-body flush">
+        <table class="data">
+          <thead><tr><th>Group Name</th><th>Description</th><th>Type</th></tr></thead>
+          <tbody>
+            ${state.authGroups.map(g => `<tr><td>${escape(g.name)}</td><td>${escape(g.desc)}</td><td>${g.readonly ? '<span class="pill info">Built-in</span>' : '<span class="pill up">Custom</span>'}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}, ['Authentication', 'Users and Groups']);
+
+window.editUser = function(idx) {
+  const isNew = idx === -1;
+  const u = isNew ? { name: '', fullName: '', group: 'Device Administrators', enabled: true } : state.authUsers[idx];
+  const grpOpts = state.authGroups.map(g => `<option ${u.group === g.name ? 'selected' : ''}>${escape(g.name)}</option>`).join('');
+  modal({
+    title: isNew ? 'Add User' : `Edit User — ${escape(u.name)}`,
+    body: `
+      <div class="form-row"><label>Username</label><input type="text" id="usr-name" value="${escape(u.name)}"></div>
+      <div class="form-row"><label>Full Name</label><input type="text" id="usr-full" value="${escape(u.fullName)}"></div>
+      <div class="form-row"><label>Passphrase</label><input type="password" id="usr-pwd" placeholder="(simulator: any value)"></div>
+      <div class="form-row"><label>Group</label><select id="usr-group">${grpOpts}</select></div>
+      <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="usr-enabled" ${u.enabled ? 'checked' : ''}><label for="usr-enabled">Account active</label></div></div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveUser(${idx})">Save</button>`
+  });
+};
+window.saveUser = function(idx) {
+  const data = {
+    name: document.getElementById('usr-name').value,
+    fullName: document.getElementById('usr-full').value,
+    group: document.getElementById('usr-group').value,
+    enabled: document.getElementById('usr-enabled').checked,
+    readonly: false
+  };
+  if (!data.name) { toast('Username required'); return; }
+  if (idx === -1) state.authUsers.push(data);
+  else state.authUsers[idx] = data;
+  saveState(); closeModal(); toast('User saved'); renderApp();
+};
+window.deleteUser = function(idx) {
+  confirmDialog(`Delete user "${state.authUsers[idx].name}"?`, () => {
+    state.authUsers.splice(idx, 1);
+    saveState(); toast('Deleted'); renderApp();
+  });
+};
+
+registerRoute('auth/sso', () => {
+  const sso = state.sso;
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Single Sign-On
+      <div class="actions"><button class="btn primary" onclick="saveSso()">Save</button></div>
+    </div>
+    <div class="page-subtitle">Transparent identity association via SSO Agent + Event Log Monitor (ELM)</div>
+    <div class="panel">
+      <div class="panel-body">
+        <div class="form-row"><label>Enable SSO</label><div class="checkbox-row"><input type="checkbox" id="sso-enabled" ${sso.enabled ? 'checked' : ''}><label for="sso-enabled">Activate Single Sign-On</label></div></div>
+        <div class="form-row"><label>SSO Agent IP</label><input type="text" id="sso-ip" value="${escape(sso.agentIp)}" placeholder="e.g., 10.0.1.50"></div>
+        <div class="form-row"><label>AD Domain</label><input type="text" id="sso-domain" value="${escape(sso.adDomain)}" placeholder="e.g., example.local"></div>
+        <div class="form-row"><label>Shared Secret</label><input type="password" id="sso-secret" value="${escape(sso.sharedSecret)}"></div>
+        <div class="form-row"><label>Identity Sources</label>
+          <div>
+            <div class="checkbox-row"><input type="checkbox" id="sso-elm" ${sso.useElm ? 'checked' : ''}><label for="sso-elm">Event Log Monitor (ELM) — reads AD security event logs on a domain server</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="sso-client" ${sso.useSsoClient ? 'checked' : ''}><label for="sso-client">SSO Client — installed on user workstations for reliability</label></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="alert info text-small"><strong>Architecture:</strong> The SSO Agent runs on a domain server. ELM watches AD event logs (4624 logon events) and reports to the SSO Agent. Optionally, SSO Client on workstations adds redundancy. For RDS/Citrix, deploy the Terminal Services Agent.</div>`;
+}, ['Authentication', 'SSO']);
+
+window.saveSso = function() {
+  state.sso.enabled = document.getElementById('sso-enabled').checked;
+  state.sso.agentIp = document.getElementById('sso-ip').value;
+  state.sso.adDomain = document.getElementById('sso-domain').value;
+  state.sso.sharedSecret = document.getElementById('sso-secret').value;
+  state.sso.useElm = document.getElementById('sso-elm').checked;
+  state.sso.useSsoClient = document.getElementById('sso-client').checked;
+  saveState(); toast('SSO settings saved');
+};
+
+registerRoute('auth/terminal-services', placeholderPage('Terminal Services', 'Configure the Terminal Services Agent for RDS/Citrix shared-session servers — disambiguates per-user identity when many users share one source IP.'), ['Authentication', 'Terminal Services']);
+registerRoute('auth/settings', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Authentication Settings</div>
+    <div class="page-subtitle">Global session and idle timeouts for authenticated users</div>
+    <div class="panel"><div class="panel-body">
+      <div class="form-row"><label>Session Timeout (min)</label><input type="number" value="${state.globalSettings.sessionTimeout}"></div>
+      <div class="form-row"><label>Idle Timeout (min)</label><input type="number" value="${state.globalSettings.idleTimeout}"></div>
+      <div class="form-row"><label>Authentication Portal Port</label><span class="mono">4100</span></div>
+      <div class="form-row"><label>Allow Multiple Concurrent Logins</label><div class="checkbox-row"><input type="checkbox" checked><label>Same user can authenticate from multiple IPs</label></div></div>
+    </div></div>`;
+}, ['Authentication', 'Settings']);
+registerRoute('auth/hotspot', placeholderPage('Hotspot', 'Configure a captive portal for guest Wi-Fi authentication — typically used with Optional zones.'), ['Authentication', 'Hotspot']);
+
+// ========================================================================
+// VPN PAGES
+// ========================================================================
+registerRoute('vpn/bovpn', () => {
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Branch Office VPN</div>
+    <div class="page-subtitle">Site-to-site IPsec VPN — gateways and tunnels</div>
+    <div class="tabs">
+      <button class="tab active" data-tab="bv-gw">Gateways</button>
+      <button class="tab" data-tab="bv-tn">Tunnels</button>
+    </div>
+    <div id="bv-gw">
+      <div class="panel">
+        <div class="panel-header">BOVPN Gateways<button class="btn sm primary" onclick="editBovpnGw(0)">+ Add Gateway</button></div>
+        <div class="panel-body flush">
+          <table class="data">
+            <thead><tr><th>Name</th><th>Peer IP</th><th>Phase 1</th><th>Auth</th><th>State</th><th></th></tr></thead>
+            <tbody>
+              ${state.bovpnGateways.length === 0 ? '<tr><td colspan="6" class="text-center text-muted">No gateways. Add one to define an IKE peer.</td></tr>' :
+                state.bovpnGateways.map(g => `<tr>
+                  <td>${escape(g.name)}</td>
+                  <td class="mono">${escape(g.peerIp)}</td>
+                  <td>${escape(g.phase1Encryption)}/${escape(g.phase1Hash)}/DH${g.phase1Dh}</td>
+                  <td>${escape(g.authMethod)}</td>
+                  <td>${g.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+                  <td class="actions-cell"><a onclick="editBovpnGw(${g.id})">Edit</a><a class="danger" onclick="deleteBovpnGw(${g.id})">Delete</a></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="bv-tn" class="hidden">
+      <div class="panel">
+        <div class="panel-header">BOVPN Tunnels<button class="btn sm primary" onclick="editBovpnTn(0)">+ Add Tunnel</button></div>
+        <div class="panel-body flush">
+          <table class="data">
+            <thead><tr><th>Name</th><th>Gateway</th><th>Local Network</th><th>Remote Network</th><th>State</th><th></th></tr></thead>
+            <tbody>
+              ${state.bovpnTunnels.length === 0 ? '<tr><td colspan="6" class="text-center text-muted">No tunnels. Add one to define which traffic the tunnel encrypts.</td></tr>' :
+                state.bovpnTunnels.map(t => `<tr>
+                  <td>${escape(t.name)}</td>
+                  <td>${escape(t.gateway)}</td>
+                  <td class="mono">${escape(t.localNetwork)}</td>
+                  <td class="mono">${escape(t.remoteNetwork)}</td>
+                  <td>${t.enabled ? '<span class="pill up">Enabled</span>' : '<span class="pill disabled">Disabled</span>'}</td>
+                  <td class="actions-cell"><a onclick="editBovpnTn(${t.id})">Edit</a><a class="danger" onclick="deleteBovpnTn(${t.id})">Delete</a></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="alert info text-small"><strong>Order of operations:</strong> Create the Gateway first (Phase 1 / IKE config), then create one or more Tunnels (Phase 2 / IPsec SA) that reference the gateway.</div>`;
+  document.querySelectorAll('.tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tabs .tab').forEach(t => t.classList.toggle('active', t === tab));
+      ['bv-gw', 'bv-tn'].forEach(idd => document.getElementById(idd).classList.toggle('hidden', idd !== tab.dataset.tab));
+    });
+  });
+}, ['VPN', 'Branch Office VPN']);
+
+window.editBovpnGw = function(id) {
+  const isNew = !id;
+  const g = id ? state.bovpnGateways.find(g => g.id === id) : { name: '', peerIp: '', authMethod: 'PSK', psk: '', phase1Encryption: 'AES-256', phase1Hash: 'SHA-256', phase1Dh: 14, phase1Lifetime: 28800, ikeVersion: 'IKEv2', enabled: true };
+  modal({
+    title: isNew ? 'Add BOVPN Gateway' : `Edit Gateway — ${escape(g.name)}`,
+    body: `
+      <div class="form-row"><label>Gateway Name</label><input type="text" id="gw-name" value="${escape(g.name)}" placeholder="e.g., HQ-to-Branch01"></div>
+      <div class="form-row"><label>Peer IP / FQDN</label><input type="text" id="gw-peer" value="${escape(g.peerIp)}" placeholder="e.g., 198.51.100.45"></div>
+      <div class="form-row"><label>IKE Version</label>
+        <select id="gw-ike">
+          <option ${g.ikeVersion === 'IKEv1' ? 'selected' : ''}>IKEv1</option>
+          <option ${g.ikeVersion === 'IKEv2' ? 'selected' : ''}>IKEv2</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Authentication Method</label>
+        <select id="gw-auth">
+          <option ${g.authMethod === 'PSK' ? 'selected' : ''}>Pre-Shared Key</option>
+          <option ${g.authMethod === 'Certificate' ? 'selected' : ''}>Certificate</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Pre-Shared Key</label><input type="password" id="gw-psk" value="${escape(g.psk)}"></div>
+      <div class="form-row"><label>Phase 1 Encryption</label>
+        <select id="gw-enc">
+          <option ${g.phase1Encryption === 'AES-128' ? 'selected' : ''}>AES-128</option>
+          <option ${g.phase1Encryption === 'AES-192' ? 'selected' : ''}>AES-192</option>
+          <option ${g.phase1Encryption === 'AES-256' ? 'selected' : ''}>AES-256</option>
+          <option ${g.phase1Encryption === '3DES' ? 'selected' : ''}>3DES (legacy)</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Phase 1 Hash</label>
+        <select id="gw-hash">
+          <option ${g.phase1Hash === 'SHA-1' ? 'selected' : ''}>SHA-1</option>
+          <option ${g.phase1Hash === 'SHA-256' ? 'selected' : ''}>SHA-256</option>
+          <option ${g.phase1Hash === 'SHA-384' ? 'selected' : ''}>SHA-384</option>
+          <option ${g.phase1Hash === 'SHA-512' ? 'selected' : ''}>SHA-512</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Phase 1 DH Group</label>
+        <select id="gw-dh">
+          <option value="2" ${g.phase1Dh === 2 ? 'selected' : ''}>Group 2 (1024-bit)</option>
+          <option value="5" ${g.phase1Dh === 5 ? 'selected' : ''}>Group 5 (1536-bit)</option>
+          <option value="14" ${g.phase1Dh === 14 ? 'selected' : ''}>Group 14 (2048-bit) — recommended</option>
+          <option value="15" ${g.phase1Dh === 15 ? 'selected' : ''}>Group 15 (3072-bit)</option>
+          <option value="16" ${g.phase1Dh === 16 ? 'selected' : ''}>Group 16 (4096-bit)</option>
+          <option value="19" ${g.phase1Dh === 19 ? 'selected' : ''}>Group 19 (ECP-256)</option>
+          <option value="20" ${g.phase1Dh === 20 ? 'selected' : ''}>Group 20 (ECP-384)</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Phase 1 Lifetime (sec)</label><input type="number" id="gw-life" value="${g.phase1Lifetime}"></div>
+      <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="gw-enabled" ${g.enabled ? 'checked' : ''}><label for="gw-enabled">Active</label></div></div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveBovpnGw(${id})">Save</button>`
+  });
+};
+window.saveBovpnGw = function(id) {
+  const data = {
+    name: document.getElementById('gw-name').value,
+    peerIp: document.getElementById('gw-peer').value,
+    ikeVersion: document.getElementById('gw-ike').value,
+    authMethod: document.getElementById('gw-auth').value,
+    psk: document.getElementById('gw-psk').value,
+    phase1Encryption: document.getElementById('gw-enc').value,
+    phase1Hash: document.getElementById('gw-hash').value,
+    phase1Dh: parseInt(document.getElementById('gw-dh').value),
+    phase1Lifetime: parseInt(document.getElementById('gw-life').value),
+    enabled: document.getElementById('gw-enabled').checked
+  };
+  if (!data.name || !data.peerIp) { toast('Name and peer IP required'); return; }
+  if (id) Object.assign(state.bovpnGateways.find(g => g.id === id), data);
+  else state.bovpnGateways.push({ id: nextId(state.bovpnGateways), ...data });
+  saveState(); closeModal(); toast('Gateway saved'); renderApp();
+};
+window.deleteBovpnGw = function(id) {
+  confirmDialog('Delete this BOVPN gateway? Tunnels using it will also be removed.', () => {
+    const gw = state.bovpnGateways.find(g => g.id === id);
+    state.bovpnGateways = state.bovpnGateways.filter(g => g.id !== id);
+    state.bovpnTunnels = state.bovpnTunnels.filter(t => t.gateway !== gw.name);
+    saveState(); toast('Deleted'); renderApp();
+  });
+};
+
+window.editBovpnTn = function(id) {
+  const isNew = !id;
+  const t = id ? state.bovpnTunnels.find(t => t.id === id) : { name: '', gateway: '', localNetwork: '', remoteNetwork: '', phase2Encryption: 'AES-256', phase2Hash: 'SHA-256', phase2PFS: true, phase2Dh: 14, phase2Lifetime: 3600, enabled: true };
+  const gwOpts = state.bovpnGateways.map(g => `<option ${t.gateway === g.name ? 'selected' : ''}>${escape(g.name)}</option>`).join('');
+  modal({
+    title: isNew ? 'Add BOVPN Tunnel' : `Edit Tunnel — ${escape(t.name)}`,
+    body: `
+      <div class="form-row"><label>Tunnel Name</label><input type="text" id="tn-name" value="${escape(t.name)}" placeholder="e.g., HQ-to-Branch01-Tunnel"></div>
+      <div class="form-row"><label>Gateway</label><select id="tn-gw"><option value="">— select gateway —</option>${gwOpts}</select></div>
+      <div class="form-row"><label>Local Network</label><input type="text" id="tn-local" value="${escape(t.localNetwork)}" placeholder="e.g., 10.0.1.0/24"></div>
+      <div class="form-row"><label>Remote Network</label><input type="text" id="tn-remote" value="${escape(t.remoteNetwork)}" placeholder="e.g., 10.20.1.0/24"></div>
+      <div class="form-row"><label>Phase 2 Encryption</label>
+        <select id="tn-enc">
+          <option ${t.phase2Encryption === 'AES-128' ? 'selected' : ''}>AES-128</option>
+          <option ${t.phase2Encryption === 'AES-256' ? 'selected' : ''}>AES-256</option>
+          <option ${t.phase2Encryption === '3DES' ? 'selected' : ''}>3DES (legacy)</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Phase 2 Hash</label>
+        <select id="tn-hash">
+          <option ${t.phase2Hash === 'SHA-1' ? 'selected' : ''}>SHA-1</option>
+          <option ${t.phase2Hash === 'SHA-256' ? 'selected' : ''}>SHA-256</option>
+          <option ${t.phase2Hash === 'SHA-384' ? 'selected' : ''}>SHA-384</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Perfect Forward Secrecy</label><div class="checkbox-row"><input type="checkbox" id="tn-pfs" ${t.phase2PFS ? 'checked' : ''}><label for="tn-pfs">Enable PFS (DH key re-exchange per Phase 2)</label></div></div>
+      <div class="form-row"><label>Phase 2 DH Group</label>
+        <select id="tn-dh">
+          <option value="2" ${t.phase2Dh === 2 ? 'selected' : ''}>Group 2</option>
+          <option value="5" ${t.phase2Dh === 5 ? 'selected' : ''}>Group 5</option>
+          <option value="14" ${t.phase2Dh === 14 ? 'selected' : ''}>Group 14 — recommended</option>
+          <option value="19" ${t.phase2Dh === 19 ? 'selected' : ''}>Group 19 (ECP-256)</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Phase 2 Lifetime (sec)</label><input type="number" id="tn-life" value="${t.phase2Lifetime}"></div>
+      <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="tn-enabled" ${t.enabled ? 'checked' : ''}><label for="tn-enabled">Active</label></div></div>
+      <div class="form-row"><div></div><div class="help">If you see "Received proposal without PFS" in BOVPN logs, both peers' PFS settings (and DH groups) must match.</div></div>
+    `,
+    footer: `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveBovpnTn(${id})">Save</button>`
+  });
+};
+window.saveBovpnTn = function(id) {
+  const data = {
+    name: document.getElementById('tn-name').value,
+    gateway: document.getElementById('tn-gw').value,
+    localNetwork: document.getElementById('tn-local').value,
+    remoteNetwork: document.getElementById('tn-remote').value,
+    phase2Encryption: document.getElementById('tn-enc').value,
+    phase2Hash: document.getElementById('tn-hash').value,
+    phase2PFS: document.getElementById('tn-pfs').checked,
+    phase2Dh: parseInt(document.getElementById('tn-dh').value),
+    phase2Lifetime: parseInt(document.getElementById('tn-life').value),
+    enabled: document.getElementById('tn-enabled').checked
+  };
+  if (!data.name || !data.gateway || !data.localNetwork || !data.remoteNetwork) { toast('All network fields required'); return; }
+  if (id) Object.assign(state.bovpnTunnels.find(t => t.id === id), data);
+  else state.bovpnTunnels.push({ id: nextId(state.bovpnTunnels), ...data });
+  saveState(); closeModal(); toast('Tunnel saved'); renderApp();
+};
+window.deleteBovpnTn = function(id) {
+  confirmDialog('Delete this BOVPN tunnel?', () => {
+    state.bovpnTunnels = state.bovpnTunnels.filter(t => t.id !== id);
+    saveState(); toast('Deleted'); renderApp();
+  });
+};
+
+// Mobile VPN pages
+function makeMobileVpnPage(key, title, fields) {
+  return () => {
+    const cfg = state.mobileVpn[key];
+    const authOpts = authServerNames().map(s => `<option ${cfg.authServer === s ? 'selected' : ''}>${escape(s)}</option>`).join('');
+    document.getElementById('page').innerHTML = `
+      <div class="page-title">${escape(title)}
+        <div class="actions"><button class="btn primary" onclick="saveMobileVpn('${key}')">Save</button></div>
+      </div>
+      <div class="page-subtitle">${escape(fields.subtitle)}</div>
+      <div class="panel"><div class="panel-body">
+        <div class="form-row"><label>Enabled</label><div class="checkbox-row"><input type="checkbox" id="mv-enabled" ${cfg.enabled ? 'checked' : ''}><label for="mv-enabled">Activate ${escape(title)}</label></div></div>
+        ${fields.html(cfg, authOpts)}
+      </div></div>
+      ${fields.note || ''}`;
+  };
+}
+
+window.saveMobileVpn = function(key) {
+  const cfg = state.mobileVpn[key];
+  cfg.enabled = document.getElementById('mv-enabled').checked;
+  document.querySelectorAll('[data-mv-field]').forEach(el => {
+    const f = el.dataset.mvField;
+    if (el.type === 'checkbox') cfg[f] = el.checked;
+    else if (el.type === 'number') cfg[f] = parseInt(el.value);
+    else cfg[f] = el.value;
+  });
+  saveState(); toast(`${key.toUpperCase()} VPN saved`); renderApp();
+};
+
+registerRoute('vpn/mobile-ssl', makeMobileVpnPage('ssl', 'Mobile VPN with SSL', {
+  subtitle: 'OpenVPN-compatible remote access VPN, easy NAT traversal, default TCP/443',
+  html: (cfg, authOpts) => `
+    <div class="form-row"><label>Primary External IP</label><input type="text" data-mv-field="primaryIp" value="${escape(cfg.primaryIp)}" placeholder="(auto-detect from External interface if blank)"></div>
+    <div class="form-row"><label>Port</label><input type="number" data-mv-field="port" value="${cfg.port}"></div>
+    <div class="form-row"><label>Protocol</label>
+      <select data-mv-field="protocol">
+        <option ${cfg.protocol === 'TCP' ? 'selected' : ''}>TCP</option>
+        <option ${cfg.protocol === 'UDP' ? 'selected' : ''}>UDP</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Authentication Server</label><select data-mv-field="authServer">${authOpts}</select></div>
+    <div class="form-row"><label>Virtual IP Pool</label><input type="text" data-mv-field="virtualPool" value="${escape(cfg.virtualPool)}"></div>
+    <div class="form-row"><label>DNS Server</label><input type="text" data-mv-field="dns" value="${escape(cfg.dns)}"></div>
+    <div class="form-row"><label>Force All Traffic</label><div class="checkbox-row"><input type="checkbox" data-mv-field="forceAllTraffic" ${cfg.forceAllTraffic ? 'checked' : ''}><label>Route all client traffic through tunnel (full-tunnel)</label></div></div>
+  `,
+  note: '<div class="alert warn text-small"><strong>Port conflict warning:</strong> If you publish a web server with SNAT on TCP/443, move the SSL VPN to a different port (e.g., 4443) since they cannot share the same external port.</div>'
+}), ['VPN', 'Mobile VPN with SSL']);
+
+registerRoute('vpn/mobile-ikev2', makeMobileVpnPage('ikev2', 'Mobile VPN with IKEv2', {
+  subtitle: 'Native OS clients on Windows, macOS, iOS, Android — no third-party software needed',
+  html: (cfg, authOpts) => `
+    <div class="form-row"><label>Primary External IP/FQDN</label><input type="text" data-mv-field="primaryIp" value="${escape(cfg.primaryIp)}" placeholder="e.g., vpn.example.com"></div>
+    <div class="form-row"><label>Authentication Server</label><select data-mv-field="authServer">${authOpts}</select></div>
+    <div class="form-row"><label>Virtual IP Pool</label><input type="text" data-mv-field="virtualPool" value="${escape(cfg.virtualPool)}"></div>
+    <div class="form-row"><label>DNS Server</label><input type="text" data-mv-field="dns" value="${escape(cfg.dns)}"></div>
+  `,
+  note: '<div class="alert info text-small">IKEv2 uses UDP 500 and 4500. Best choice for client OS compatibility — no installer required.</div>'
+}), ['VPN', 'Mobile VPN with IKEv2']);
+
+registerRoute('vpn/mobile-ipsec', makeMobileVpnPage('ipsec', 'Mobile VPN with IPSec', {
+  subtitle: 'Legacy IPsec VPN — used with the WatchGuard IPSec Mobile VPN client',
+  html: (cfg, authOpts) => `
+    <div class="form-row"><label>Authentication Server</label><select data-mv-field="authServer">${authOpts}</select></div>
+    <div class="form-row"><label>Virtual IP Pool</label><input type="text" data-mv-field="virtualPool" value="${escape(cfg.virtualPool)}"></div>
+    <div class="form-row"><label>Pre-Shared Key</label><input type="password" data-mv-field="psk" value="${escape(cfg.psk)}"></div>
+  `
+}), ['VPN', 'Mobile VPN with IPSec']);
+
+registerRoute('vpn/mobile-l2tp', makeMobileVpnPage('l2tp', 'Mobile VPN with L2TP', {
+  subtitle: 'Legacy L2TP/IPsec VPN — supported by older client OSes',
+  html: (cfg, authOpts) => `
+    <div class="form-row"><label>Authentication Server</label><select data-mv-field="authServer">${authOpts}</select></div>
+    <div class="form-row"><label>Virtual IP Pool</label><input type="text" data-mv-field="virtualPool" value="${escape(cfg.virtualPool)}"></div>
+    <div class="form-row"><label>Pre-Shared Key</label><input type="password" data-mv-field="psk" value="${escape(cfg.psk)}"></div>
+  `,
+  note: '<div class="alert warn text-small">L2TP is largely retained for compatibility — prefer IKEv2 or SSL for new deployments.</div>'
+}), ['VPN', 'Mobile VPN with L2TP']);
+
+// ============== SYSTEM PAGES ==============
+
+registerRoute('system/info', () => {
+  const s = state.system;
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">Device Information</h2>
+    <div class="page-sub">Hardware identity, OS version, and uptime — read-only.</div>
+    <div class="card">
+      <table class="kv-table">
+        <tr><td>Device Name</td><td><strong>${escape(s.hostname)}</strong></td></tr>
+        <tr><td>Model</td><td>${escape(s.model)}</td></tr>
+        <tr><td>Serial Number</td><td><span class="mono">${escape(s.serial)}</span></td></tr>
+        <tr><td>Fireware OS Version</td><td>${escape(s.fireware)}</td></tr>
+        <tr><td>OS Build</td><td><span class="mono">${escape(s.build)}</span></td></tr>
+        <tr><td>System Time</td><td>${new Date().toLocaleString()}</td></tr>
+        <tr><td>Uptime</td><td>12 days, 04:17:33</td></tr>
+        <tr><td>Management Mode</td><td><span class="pill green">Locally-Managed</span></td></tr>
+        <tr><td>Time Zone</td><td>${escape(s.timezone)}</td></tr>
+        <tr><td>Location</td><td>${escape(s.location)}</td></tr>
+        <tr><td>Contact</td><td>${escape(s.contact)}</td></tr>
+      </table>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Hardware</h3>
+      <table class="kv-table">
+        <tr><td>CPU</td><td>Intel Atom C3000-series, 4 cores @ 1.7 GHz</td></tr>
+        <tr><td>Memory</td><td>4 GB DDR4 (1.2 GB used)</td></tr>
+        <tr><td>Storage</td><td>32 GB SSD (4.8 GB used)</td></tr>
+        <tr><td>Interfaces</td><td>8 × 1GbE RJ45 (interfaces 0–7)</td></tr>
+        <tr><td>USB Ports</td><td>2 × USB 3.0</td></tr>
+        <tr><td>Console</td><td>RJ45 serial — 115200 baud, 8N1</td></tr>
+      </table>
+    </div>
+    <button class="btn primary mt-16" id="btn-edit-info">Edit Device Identity</button>
+  `;
+  c.querySelector('#btn-edit-info').onclick = () => {
+    modal({
+      title: 'Edit Device Identity',
+      body: `
+      <div class="form-row"><label>Hostname</label><input type="text" id="ed-hostname" value="${escape(s.hostname)}"></div>
+      <div class="form-row"><label>Location</label><input type="text" id="ed-location" value="${escape(s.location)}"></div>
+      <div class="form-row"><label>Contact</label><input type="text" id="ed-contact" value="${escape(s.contact)}"></div>
+      <div class="form-row"><label>Time Zone</label>
+        <select id="ed-timezone">
+          ${['UTC','America/Chicago','America/New_York','America/Los_Angeles','America/Denver','Europe/London','Europe/Berlin','Asia/Tokyo'].map(tz => `<option ${tz === s.timezone ? 'selected' : ''}>${tz}</option>`).join('')}
+        </select>
+      </div>
+    `,
+      footer: `<button class="btn" id="ed-cancel">Cancel</button><button class="btn primary" id="ed-save">Save</button>`
+    });
+    document.getElementById('ed-cancel').onclick = closeModal;
+    document.getElementById('ed-save').onclick = () => {
+      s.hostname = document.getElementById('ed-hostname').value;
+      s.location = document.getElementById('ed-location').value;
+      s.contact = document.getElementById('ed-contact').value;
+      s.timezone = document.getElementById('ed-timezone').value;
+      saveState(); closeModal(); toast('Device identity updated'); renderApp();
+    };
+  };
+  return c;
+}, ['System', 'Device Information']);
+
+registerRoute('system/feature-key', () => {
+  const fk = state.featureKey;
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">Feature Key</h2>
+    <div class="page-sub">Active feature key, expiration dates, and licensed services.</div>
+    <div class="alert info">
+      <strong>About feature keys:</strong> The feature key unlocks subscription services and defines model capabilities. Without a valid key, the Firebox runs as a basic firewall but subscription services are inactive.
+    </div>
+    <div class="card">
+      <table class="kv-table">
+        <tr><td>License Type</td><td><strong>${escape(fk.licenseType)}</strong></td></tr>
+        <tr><td>Activation Date</td><td>${escape(fk.activated)}</td></tr>
+        <tr><td>Expiration Date</td><td><span class="pill green">${escape(fk.expires)}</span></td></tr>
+        <tr><td>Activation Code</td><td><span class="mono">${escape(fk.activationCode)}</span></td></tr>
+      </table>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Licensed Features</h3>
+      <table class="data-table">
+        <thead><tr><th>Feature</th><th>Status</th><th>Expires</th></tr></thead>
+        <tbody>
+          ${fk.features.map(f => `<tr><td>${escape(f.name)}</td><td><span class="pill ${f.status === 'Active' ? 'green' : 'gray'}">${escape(f.status)}</span></td><td>${escape(f.expires)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="btn-row mt-16">
+      <button class="btn" id="btn-fk-sync">Synchronize with WatchGuard</button>
+      <button class="btn" id="btn-fk-import">Import Feature Key…</button>
+      <button class="btn" id="btn-fk-export">Export Current Key</button>
+    </div>
+  `;
+  c.querySelector('#btn-fk-sync').onclick = () => toast('Sync request sent to WatchGuard servers (simulated)');
+  c.querySelector('#btn-fk-import').onclick = () => {
+    modal({
+      title: 'Import Feature Key',
+      body: `
+    <div class="form-row"><label>Paste feature key text</label>
+      <textarea id="fk-paste" rows="10" placeholder="Serial Number: ..."></textarea>
+    </div>
+  `,
+      footer: `<button class="btn" id="fk-cancel">Cancel</button><button class="btn primary" id="fk-import-go">Import</button>`
+    });
+    document.getElementById('fk-cancel').onclick = closeModal;
+    document.getElementById('fk-import-go').onclick = () => { toast('Feature key imported (simulated)'); closeModal(); };
+  };
+  c.querySelector('#btn-fk-export').onclick = () => toast('Feature key exported to feature_key.txt (simulated)');
+  return c;
+}, ['System', 'Feature Key']);
+
+registerRoute('system/configuration', () => {
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">Configuration File</h2>
+    <div class="page-sub">Save the running configuration to an XML file, or load a configuration from disk.</div>
+    <div class="alert info">
+      The <span class="mono">.xml</span> file contains configuration only — policies, NAT, VPN, etc. For a full system snapshot including OS and certificates, use <strong>Backup Image</strong>.
+    </div>
+    <div class="card">
+      <h3 class="card-title">Save Configuration</h3>
+      <p class="text-muted">Export the running config as <span class="mono">${escape(state.system.hostname)}_config.xml</span>.</p>
+      <button class="btn primary" id="btn-save-cfg">Save to XML</button>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Load Configuration</h3>
+      <p class="text-muted">Load a previously-saved XML config. The current configuration will be replaced.</p>
+      <div class="alert warn">Loading a config replaces the running configuration. The Firebox will reboot to apply.</div>
+      <input type="file" id="cfg-file" accept=".xml" class="mt-8">
+      <button class="btn mt-8" id="btn-load-cfg">Load Configuration</button>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Reset Configuration</h3>
+      <p class="text-muted">Restore the Firebox to factory defaults. Equivalent to a hardware reset (hold Reset + briefly press Power).</p>
+      <button class="btn danger" id="btn-reset-cfg">Reset to Factory Defaults</button>
+    </div>
+  `;
+  c.querySelector('#btn-save-cfg').onclick = () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${state.system.hostname}_config.xml`;
+    a.click();
+    toast('Configuration exported');
+  };
+  c.querySelector('#btn-load-cfg').onclick = () => toast('Configuration load is simulated only');
+  c.querySelector('#btn-reset-cfg').onclick = () => confirmDialog('Reset to factory defaults? All configuration will be lost.', () => {
+    resetState(); toast('Reset to factory defaults — Firebox would reboot now'); renderApp();
+  });
+  return c;
+}, ['System', 'Configuration File']);
+
+registerRoute('system/backup', () => {
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">Backup Image</h2>
+    <div class="page-sub">Capture or restore a full system snapshot — OS, configuration, certificates, and feature key.</div>
+    <div class="alert info">
+      <strong>Backup image (.fxi)</strong> is the full snapshot. Use this before firmware upgrades or for spare-unit recovery. <strong>Always take a backup before upgrading firmware.</strong>
+    </div>
+    <div class="card">
+      <h3 class="card-title">Create Backup Image</h3>
+      <div class="form-row"><label>Encryption Passphrase (recommended)</label><input type="password" id="bk-pass" placeholder="Strong passphrase to encrypt the .fxi"></div>
+      <button class="btn primary" id="btn-create-backup">Create Backup Image</button>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Restore Backup Image</h3>
+      <input type="file" id="bk-file" accept=".fxi" class="mt-8">
+      <div class="form-row mt-8"><label>Decryption Passphrase</label><input type="password" id="bk-restore-pass"></div>
+      <div class="alert warn">Restoring a backup image replaces the entire system and reboots.</div>
+      <button class="btn" id="btn-restore-backup">Restore from Backup</button>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">USB Backup</h3>
+      <p class="text-muted">A tagged USB stick plugged into the Firebox can be configured to auto-restore on boot — useful for fast spare-unit replacement.</p>
+      <table class="kv-table">
+        <tr><td>USB Slot 1</td><td><span class="pill gray">Not Detected</span></td></tr>
+        <tr><td>USB Slot 2</td><td><span class="pill gray">Not Detected</span></td></tr>
+      </table>
+      <button class="btn mt-8" disabled>Configure USB Backup</button>
+    </div>
+  `;
+  c.querySelector('#btn-create-backup').onclick = () => {
+    toast('Backup image created — would download .fxi from a real device');
+  };
+  c.querySelector('#btn-restore-backup').onclick = () => toast('Backup restore is simulated only');
+  return c;
+}, ['System', 'Backup Image']);
+
+registerRoute('system/upgrade', () => {
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">Upgrade OS</h2>
+    <div class="page-sub">Apply a Fireware OS firmware image to the Firebox.</div>
+    <div class="alert warn">
+      <strong>Pre-upgrade checklist:</strong> 1) Save a backup image (.fxi). 2) Save XML config. 3) Read release notes for known issues. 4) Schedule a maintenance window. 5) Validate critical traffic flows after upgrade.
+    </div>
+    <div class="card">
+      <h3 class="card-title">Current Version</h3>
+      <table class="kv-table">
+        <tr><td>Fireware OS</td><td><strong>${escape(state.system.fireware)}</strong></td></tr>
+        <tr><td>Build</td><td><span class="mono">${escape(state.system.build)}</span></td></tr>
+        <tr><td>Last Upgrade</td><td>2025-09-12</td></tr>
+      </table>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Upload Firmware Image</h3>
+      <p class="text-muted">Download Fireware images from the WatchGuard Software Downloads portal. Firmware is validated against the model and serial.</p>
+      <input type="file" id="fw-file" accept=".sysa-dl,.bin" class="mt-8">
+      <div class="form-row mt-8">
+        <label class="checkbox-row"><input type="checkbox" id="fw-reboot" checked><span>Reboot automatically after upgrade</span></label>
+      </div>
+      <button class="btn primary mt-8" id="btn-upgrade">Upload and Upgrade</button>
+    </div>
+  `;
+  c.querySelector('#btn-upgrade').onclick = () => confirmDialog('Apply firmware upgrade now? The Firebox will be unreachable during reboot (~3 minutes).', () => {
+    toast('Firmware upgrade started (simulated)');
+  });
+  return c;
+}, ['System', 'Upgrade OS']);
+
+registerRoute('system/logging', () => {
+  const lg = state.logging;
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">Logging</h2>
+    <div class="page-sub">Configure where the Firebox sends log messages.</div>
+    <div class="card">
+      <h3 class="card-title">WatchGuard Log Servers</h3>
+      <p class="text-muted">Send logs to the WatchGuard Log Server (installed with WSM) or to a Dimension Log Server.</p>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="lg-wg-enabled" ${lg.wgLogServer.enabled ? 'checked' : ''}><span>Enable WatchGuard Log Server</span></label></div>
+      <div class="form-row"><label>Server IP / Hostname</label><input type="text" id="lg-wg-ip" value="${escape(lg.wgLogServer.ip)}"></div>
+      <div class="form-row"><label>Encryption Key</label><input type="password" id="lg-wg-key" value="${escape(lg.wgLogServer.key)}"></div>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Syslog</h3>
+      <p class="text-muted">Send logs to a third-party syslog destination (Graylog, Splunk, ELK, Sentinel).</p>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="lg-sys-enabled" ${lg.syslog.enabled ? 'checked' : ''}><span>Enable Syslog</span></label></div>
+      <div class="form-row"><label>Server IP / Hostname</label><input type="text" id="lg-sys-ip" value="${escape(lg.syslog.ip)}"></div>
+      <div class="form-row"><label>Port</label><input type="number" id="lg-sys-port" value="${lg.syslog.port}"></div>
+      <div class="form-row"><label>Protocol</label>
+        <select id="lg-sys-proto">
+          <option ${lg.syslog.protocol === 'UDP' ? 'selected' : ''}>UDP</option>
+          <option ${lg.syslog.protocol === 'TCP' ? 'selected' : ''}>TCP</option>
+          <option ${lg.syslog.protocol === 'TLS' ? 'selected' : ''}>TLS</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Format</label>
+        <select id="lg-sys-format">
+          <option ${lg.syslog.format === 'Syslog' ? 'selected' : ''}>Syslog</option>
+          <option ${lg.syslog.format === 'IBM LEEF' ? 'selected' : ''}>IBM LEEF</option>
+          <option ${lg.syslog.format === 'CEF' ? 'selected' : ''}>CEF</option>
+        </select>
+      </div>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">WatchGuard Cloud Logging</h3>
+      <p class="text-muted">Send logs to your WatchGuard Cloud account for visualization and reporting.</p>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="lg-cloud-enabled" ${lg.cloud.enabled ? 'checked' : ''}><span>Send logs to WatchGuard Cloud</span></label></div>
+      <div class="form-row"><label>Account ID</label><input type="text" id="lg-cloud-id" value="${escape(lg.cloud.accountId)}"></div>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Log Settings</h3>
+      <div class="form-row"><label>Diagnostic Log Level</label>
+        <select id="lg-level">
+          ${['Error', 'Warning', 'Information', 'Debug'].map(l => `<option ${lg.logLevel === l ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="lg-perf" ${lg.perfStats ? 'checked' : ''}><span>Send performance statistics</span></label></div>
+    </div>
+    <div class="btn-row mt-16">
+      <button class="btn primary" id="btn-save-logging">Save Logging Settings</button>
+    </div>
+  `;
+  c.querySelector('#btn-save-logging').onclick = () => {
+    lg.wgLogServer.enabled = document.getElementById('lg-wg-enabled').checked;
+    lg.wgLogServer.ip = document.getElementById('lg-wg-ip').value;
+    lg.wgLogServer.key = document.getElementById('lg-wg-key').value;
+    lg.syslog.enabled = document.getElementById('lg-sys-enabled').checked;
+    lg.syslog.ip = document.getElementById('lg-sys-ip').value;
+    lg.syslog.port = parseInt(document.getElementById('lg-sys-port').value);
+    lg.syslog.protocol = document.getElementById('lg-sys-proto').value;
+    lg.syslog.format = document.getElementById('lg-sys-format').value;
+    lg.cloud.enabled = document.getElementById('lg-cloud-enabled').checked;
+    lg.cloud.accountId = document.getElementById('lg-cloud-id').value;
+    lg.logLevel = document.getElementById('lg-level').value;
+    lg.perfStats = document.getElementById('lg-perf').checked;
+    saveState(); toast('Logging settings saved'); renderApp();
+  };
+  return c;
+}, ['System', 'Logging']);
+
+registerRoute('system/ntp', () => {
+  const ntp = state.ntp;
+  const c = document.createElement('div');
+  const renderTable = () => `
+    <table class="data-table">
+      <thead><tr><th>NTP Server</th><th style="width:120px">Action</th></tr></thead>
+      <tbody>
+        ${ntp.servers.map((s, i) => `<tr><td><span class="mono">${escape(s)}</span></td><td><button class="btn btn-sm btn-link-red" data-rm="${i}">Remove</button></td></tr>`).join('')}
+        ${ntp.servers.length === 0 ? '<tr><td colspan="2" class="text-muted text-center">No NTP servers configured</td></tr>' : ''}
+      </tbody>
+    </table>
+  `;
+  c.innerHTML = `
+    <h2 class="page-title">Network Time Protocol (NTP)</h2>
+    <div class="page-sub">Synchronize system time with NTP servers — accurate time is required for valid log timestamps and certificate validation.</div>
+    <div class="card">
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="ntp-enabled" ${ntp.enabled ? 'checked' : ''}><span>Enable NTP</span></label></div>
+      <h3 class="card-title mt-16">NTP Servers</h3>
+      <div id="ntp-table">${renderTable()}</div>
+      <div class="btn-row mt-8">
+        <input type="text" id="ntp-new" placeholder="pool.ntp.org or 0.pool.ntp.org" style="flex:1; max-width:320px">
+        <button class="btn" id="btn-ntp-add">Add Server</button>
+      </div>
+    </div>
+    <div class="btn-row mt-16">
+      <button class="btn primary" id="btn-save-ntp">Save NTP Settings</button>
+      <button class="btn" id="btn-sync-now">Synchronize Now</button>
+    </div>
+  `;
+  const wireTable = () => {
+    c.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => {
+      ntp.servers.splice(parseInt(b.dataset.rm), 1);
+      document.getElementById('ntp-table').innerHTML = renderTable();
+      wireTable();
+    });
+  };
+  wireTable();
+  c.querySelector('#btn-ntp-add').onclick = () => {
+    const v = document.getElementById('ntp-new').value.trim();
+    if (!v) return;
+    ntp.servers.push(v);
+    document.getElementById('ntp-new').value = '';
+    document.getElementById('ntp-table').innerHTML = renderTable();
+    wireTable();
+  };
+  c.querySelector('#btn-save-ntp').onclick = () => {
+    ntp.enabled = document.getElementById('ntp-enabled').checked;
+    saveState(); toast('NTP settings saved');
+  };
+  c.querySelector('#btn-sync-now').onclick = () => toast('Time sync requested (simulated)');
+  return c;
+}, ['System', 'NTP']);
+
+registerRoute('system/snmp', () => {
+  const snmp = state.snmp;
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">SNMP</h2>
+    <div class="page-sub">Allow polling and traps from a network management system.</div>
+    <div class="card">
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="snmp-enabled" ${snmp.enabled ? 'checked' : ''}><span>Enable SNMP</span></label></div>
+      <div class="form-row"><label>SNMP Version</label>
+        <select id="snmp-version">
+          <option value="v1" ${snmp.version === 'v1' ? 'selected' : ''}>SNMPv1</option>
+          <option value="v2c" ${snmp.version === 'v2c' ? 'selected' : ''}>SNMPv2c</option>
+          <option value="v3" ${snmp.version === 'v3' ? 'selected' : ''}>SNMPv3 (recommended)</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Listen Port</label><input type="number" id="snmp-port" value="${snmp.port}"></div>
+    </div>
+    <div class="card mt-16" id="snmp-v2-card">
+      <h3 class="card-title">v1 / v2c Settings</h3>
+      <div class="form-row"><label>Community String</label><input type="text" id="snmp-community" value="${escape(snmp.community)}"></div>
+      <div class="alert warn text-small">v1/v2c uses cleartext communities — prefer v3 in production.</div>
+    </div>
+    <div class="card mt-16" id="snmp-v3-card">
+      <h3 class="card-title">v3 Settings</h3>
+      <div class="form-row"><label>Username</label><input type="text" id="snmp-v3-user" value="${escape(snmp.v3User)}"></div>
+      <div class="form-row"><label>Authentication Protocol</label>
+        <select id="snmp-v3-auth">
+          ${['SHA', 'SHA-256', 'MD5', 'None'].map(a => `<option ${snmp.v3Auth === a ? 'selected' : ''}>${a}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-row"><label>Authentication Passphrase</label><input type="password" id="snmp-v3-authpass" value="${escape(snmp.v3AuthPass)}"></div>
+      <div class="form-row"><label>Privacy Protocol</label>
+        <select id="snmp-v3-priv">
+          ${['AES-128', 'AES-256', 'DES', 'None'].map(a => `<option ${snmp.v3Priv === a ? 'selected' : ''}>${a}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-row"><label>Privacy Passphrase</label><input type="password" id="snmp-v3-privpass" value="${escape(snmp.v3PrivPass)}"></div>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">SNMP Traps</h3>
+      <div class="form-row"><label>Trap Receiver</label><input type="text" id="snmp-trap" value="${escape(snmp.trapReceiver)}" placeholder="(IP of NMS that receives traps)"></div>
+    </div>
+    <div class="btn-row mt-16">
+      <button class="btn primary" id="btn-save-snmp">Save SNMP Settings</button>
+    </div>
+  `;
+  c.querySelector('#btn-save-snmp').onclick = () => {
+    snmp.enabled = document.getElementById('snmp-enabled').checked;
+    snmp.version = document.getElementById('snmp-version').value;
+    snmp.port = parseInt(document.getElementById('snmp-port').value);
+    snmp.community = document.getElementById('snmp-community').value;
+    snmp.v3User = document.getElementById('snmp-v3-user').value;
+    snmp.v3Auth = document.getElementById('snmp-v3-auth').value;
+    snmp.v3AuthPass = document.getElementById('snmp-v3-authpass').value;
+    snmp.v3Priv = document.getElementById('snmp-v3-priv').value;
+    snmp.v3PrivPass = document.getElementById('snmp-v3-privpass').value;
+    snmp.trapReceiver = document.getElementById('snmp-trap').value;
+    saveState(); toast('SNMP settings saved');
+  };
+  return c;
+}, ['System', 'SNMP']);
+
+registerRoute('system/users-roles', () => {
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">Device Users & Roles</h2>
+    <div class="page-sub">Local Firebox administrators (separate from authentication users for policy enforcement).</div>
+    <div class="alert info">
+      <strong>Two built-in roles:</strong> <strong>Device Administrator</strong> (full read-write — default user <span class="mono">admin</span>) and <strong>Device Monitor</strong> (read-only — default user <span class="mono">status</span>). Custom roles can be created with granular permissions.
+    </div>
+    <div class="card">
+      <h3 class="card-title">Built-in Device Users</h3>
+      <table class="data-table">
+        <thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Last Login</th><th style="width:160px">Action</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="mono">admin</span></td>
+            <td><span class="pill blue">Device Administrator</span></td>
+            <td><span class="pill green">Active</span></td>
+            <td class="mono text-small">2026-05-09 14:22</td>
+            <td><button class="btn btn-sm" id="btn-pw-admin">Change Passphrase</button></td>
+          </tr>
+          <tr>
+            <td><span class="mono">status</span></td>
+            <td><span class="pill gray">Device Monitor</span></td>
+            <td><span class="pill green">Active</span></td>
+            <td class="mono text-small">2026-04-18 09:11</td>
+            <td><button class="btn btn-sm" id="btn-pw-status">Change Passphrase</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Built-in Roles</h3>
+      <table class="data-table">
+        <thead><tr><th>Role</th><th>Permissions</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill blue">Device Administrator</span></td><td>Full read-write — can change configuration, view logs, manage users.</td></tr>
+          <tr><td><span class="pill gray">Device Monitor</span></td><td>Read-only — can view configuration and logs but cannot make changes.</td></tr>
+          <tr><td><span class="pill purple">Custom Role</span></td><td>User-defined — granular permissions across feature areas.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="btn-row mt-16">
+      <button class="btn primary" id="btn-add-user">Add Device User</button>
+      <button class="btn" id="btn-add-role">Add Custom Role</button>
+    </div>
+  `;
+  const changePw = (user) => {
+    modal({
+      title: `Change passphrase for ${user}`,
+      body: `
+    <div class="form-row"><label>Current Passphrase</label><input type="password" id="pw-current"></div>
+    <div class="form-row"><label>New Passphrase</label><input type="password" id="pw-new"></div>
+    <div class="form-row"><label>Confirm New Passphrase</label><input type="password" id="pw-confirm"></div>
+    <div class="alert warn text-small">Default passphrases (<span class="mono">readwrite</span>, <span class="mono">readonly</span>) should be changed immediately on any production Firebox.</div>
+  `,
+      footer: `<button class="btn" id="pw-cancel">Cancel</button><button class="btn primary" id="pw-save">Update Passphrase</button>`
+    });
+    document.getElementById('pw-cancel').onclick = closeModal;
+    document.getElementById('pw-save').onclick = () => {
+      const newPw = document.getElementById('pw-new').value;
+      const confirmPw = document.getElementById('pw-confirm').value;
+      if (newPw !== confirmPw) { toast('Passphrases do not match'); return; }
+      if (newPw.length < 8) { toast('Passphrase must be at least 8 characters'); return; }
+      closeModal();
+      toast(`Passphrase updated for ${user}`);
+    };
+  };
+  c.querySelector('#btn-pw-admin').onclick = () => changePw('admin');
+  c.querySelector('#btn-pw-status').onclick = () => changePw('status');
+  c.querySelector('#btn-add-user').onclick = () => toast('Add Device User dialog (simulated)');
+  c.querySelector('#btn-add-role').onclick = () => toast('Add Custom Role dialog (simulated)');
+  return c;
+}, ['System', 'Users and Roles']);
+
+registerRoute('system/global-settings', () => {
+  const g = state.globalSettings;
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">Global Settings</h2>
+    <div class="page-sub">Device-wide settings affecting management access, idle timeouts, and TCP/IP behavior.</div>
+    <div class="card">
+      <h3 class="card-title">Web UI</h3>
+      <div class="form-row"><label>HTTPS Port</label><input type="number" id="gs-webui-port" value="${g.webUiPort}"></div>
+      <div class="form-row"><label>Session Idle Timeout (minutes)</label><input type="number" id="gs-idle" value="${g.sessionIdle}"></div>
+      <div class="form-row"><label>Maximum Session Length (hours)</label><input type="number" id="gs-max" value="${g.sessionMax}"></div>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">SSH</h3>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="gs-ssh-enabled" ${g.sshEnabled ? 'checked' : ''}><span>Enable SSH CLI access</span></label></div>
+      <div class="form-row"><label>SSH Port</label><input type="number" id="gs-ssh-port" value="${g.sshPort}"></div>
+      <div class="alert info text-small">Default Fireware SSH port is <strong>4118</strong> (not 22).</div>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">ICMP</h3>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="gs-icmp-trusted" ${g.icmpTrusted ? 'checked' : ''}><span>Allow ping to Trusted interfaces</span></label></div>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="gs-icmp-external" ${g.icmpExternal ? 'checked' : ''}><span>Allow ping to External interfaces</span></label></div>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">TCP/IP</h3>
+      <div class="form-row"><label>TCP MTU</label><input type="number" id="gs-mtu" value="${g.tcpMtu}"></div>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="gs-tcp-syn" ${g.tcpSynChecking ? 'checked' : ''}><span>Enable TCP SYN checking</span></label></div>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="gs-pmtud" ${g.pathMtuDiscovery ? 'checked' : ''}><span>Enable Path MTU Discovery</span></label></div>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Auto-Reboot</h3>
+      <div class="form-row"><label class="checkbox-row"><input type="checkbox" id="gs-auto-reboot" ${g.autoReboot ? 'checked' : ''}><span>Enable scheduled auto-reboot</span></label></div>
+      <div class="form-row"><label>Schedule</label><input type="text" id="gs-reboot-sched" value="${escape(g.autoRebootSchedule)}" placeholder="Sunday 03:00"></div>
+    </div>
+    <div class="btn-row mt-16">
+      <button class="btn primary" id="btn-save-gs">Save Global Settings</button>
+    </div>
+  `;
+  c.querySelector('#btn-save-gs').onclick = () => {
+    g.webUiPort = parseInt(document.getElementById('gs-webui-port').value);
+    g.sessionIdle = parseInt(document.getElementById('gs-idle').value);
+    g.sessionMax = parseInt(document.getElementById('gs-max').value);
+    g.sshEnabled = document.getElementById('gs-ssh-enabled').checked;
+    g.sshPort = parseInt(document.getElementById('gs-ssh-port').value);
+    g.icmpTrusted = document.getElementById('gs-icmp-trusted').checked;
+    g.icmpExternal = document.getElementById('gs-icmp-external').checked;
+    g.tcpMtu = parseInt(document.getElementById('gs-mtu').value);
+    g.tcpSynChecking = document.getElementById('gs-tcp-syn').checked;
+    g.pathMtuDiscovery = document.getElementById('gs-pmtud').checked;
+    g.autoReboot = document.getElementById('gs-auto-reboot').checked;
+    g.autoRebootSchedule = document.getElementById('gs-reboot-sched').value;
+    saveState(); toast('Global settings saved');
+  };
+  return c;
+}, ['System', 'Global Settings']);
+
+registerRoute('system/diagnostics', () => {
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <h2 class="page-title">Diagnostics</h2>
+    <div class="page-sub">Built-in network troubleshooting tools — ping, traceroute, DNS lookup, TCP dump.</div>
+    <div class="diag-grid">
+      <div class="card">
+        <h3 class="card-title">Ping</h3>
+        <div class="form-row"><label>Destination</label><input type="text" id="diag-ping-dst" placeholder="8.8.8.8 or hostname"></div>
+        <div class="form-row"><label>Count</label><input type="number" id="diag-ping-count" value="4"></div>
+        <button class="btn primary" id="btn-ping">Run Ping</button>
+        <pre class="diag-output" id="diag-ping-out">No output yet.</pre>
+      </div>
+      <div class="card">
+        <h3 class="card-title">Traceroute</h3>
+        <div class="form-row"><label>Destination</label><input type="text" id="diag-tr-dst" placeholder="8.8.8.8 or hostname"></div>
+        <div class="form-row"><label>Max Hops</label><input type="number" id="diag-tr-max" value="30"></div>
+        <button class="btn primary" id="btn-tr">Run Traceroute</button>
+        <pre class="diag-output" id="diag-tr-out">No output yet.</pre>
+      </div>
+      <div class="card">
+        <h3 class="card-title">DNS Lookup</h3>
+        <div class="form-row"><label>Hostname</label><input type="text" id="diag-dns-host" placeholder="www.example.com"></div>
+        <div class="form-row"><label>Record Type</label>
+          <select id="diag-dns-type">
+            ${['A', 'AAAA', 'MX', 'TXT', 'CNAME', 'NS'].map(t => `<option>${t}</option>`).join('')}
+          </select>
+        </div>
+        <button class="btn primary" id="btn-dns">Run Lookup</button>
+        <pre class="diag-output" id="diag-dns-out">No output yet.</pre>
+      </div>
+      <div class="card">
+        <h3 class="card-title">TCP Dump</h3>
+        <div class="form-row"><label>Interface</label>
+          <select id="diag-td-int">
+            ${state.interfaces.map(i => `<option value="${escape(i.name)}">${escape(i.name)} — ${escape(i.description)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-row"><label>BPF Filter (optional)</label><input type="text" id="diag-td-filter" placeholder="host 8.8.8.8 and port 443"></div>
+        <div class="form-row"><label>Packet Count</label><input type="number" id="diag-td-count" value="100"></div>
+        <button class="btn primary" id="btn-td">Start Capture</button>
+        <pre class="diag-output" id="diag-td-out">No output yet.</pre>
+      </div>
+    </div>
+    <div class="card mt-16">
+      <h3 class="card-title">Support Snapshot</h3>
+      <p class="text-muted">Package configuration and diagnostic data for WatchGuard Support.</p>
+      <button class="btn" id="btn-support">Generate Support Snapshot</button>
+    </div>
+  `;
+  c.querySelector('#btn-ping').onclick = () => {
+    const dst = document.getElementById('diag-ping-dst').value || '8.8.8.8';
+    const count = parseInt(document.getElementById('diag-ping-count').value) || 4;
+    let out = `PING ${dst} (${dst}) 56(84) bytes of data.\n`;
+    let times = [];
+    for (let i = 0; i < count; i++) {
+      const t = (Math.random() * 25 + 8).toFixed(2);
+      times.push(parseFloat(t));
+      out += `64 bytes from ${dst}: icmp_seq=${i+1} ttl=58 time=${t} ms\n`;
+    }
+    const avg = (times.reduce((a, b) => a + b, 0) / times.length).toFixed(2);
+    const min = Math.min(...times).toFixed(2);
+    const max = Math.max(...times).toFixed(2);
+    out += `\n--- ${dst} ping statistics ---\n${count} packets transmitted, ${count} received, 0% packet loss\nrtt min/avg/max = ${min}/${avg}/${max} ms`;
+    document.getElementById('diag-ping-out').textContent = out;
+  };
+  c.querySelector('#btn-tr').onclick = () => {
+    const dst = document.getElementById('diag-tr-dst').value || '8.8.8.8';
+    const hops = [
+      { ip: '203.0.113.1', name: 'gateway.isp.net', t: 1.2 },
+      { ip: '10.252.4.1', name: 'core-rtr-1.isp.net', t: 4.8 },
+      { ip: '209.85.142.27', name: 'google-edge-1.net', t: 12.3 },
+      { ip: dst, name: dst, t: 14.7 }
+    ];
+    let out = `traceroute to ${dst}, 30 hops max, 60 byte packets\n`;
+    hops.forEach((h, i) => {
+      out += `${(i+1).toString().padStart(2)}  ${h.name} (${h.ip})  ${h.t} ms  ${(h.t + 0.3).toFixed(1)} ms  ${(h.t + 0.5).toFixed(1)} ms\n`;
+    });
+    document.getElementById('diag-tr-out').textContent = out;
+  };
+  c.querySelector('#btn-dns').onclick = () => {
+    const host = document.getElementById('diag-dns-host').value || 'www.example.com';
+    const type = document.getElementById('diag-dns-type').value;
+    const samples = {
+      A: `${host}.\t300\tIN\tA\t93.184.216.34`,
+      AAAA: `${host}.\t300\tIN\tAAAA\t2606:2800:220:1:248:1893:25c8:1946`,
+      MX: `${host}.\t300\tIN\tMX\t10 mail.${host}.\n${host}.\t300\tIN\tMX\t20 mail2.${host}.`,
+      TXT: `${host}.\t300\tIN\tTXT\t"v=spf1 include:_spf.example.com -all"`,
+      CNAME: `${host}.\t300\tIN\tCNAME\torigin.${host}.`,
+      NS: `${host}.\t86400\tIN\tNS\tns1.${host}.\n${host}.\t86400\tIN\tNS\tns2.${host}.`
+    };
+    document.getElementById('diag-dns-out').textContent = `;; ANSWER SECTION:\n${samples[type]}\n\n;; Query time: 14 msec\n;; SERVER: ${state.dns.servers[0] || '8.8.8.8'}#53`;
+  };
+  c.querySelector('#btn-td').onclick = () => {
+    const intf = document.getElementById('diag-td-int').value;
+    const filter = document.getElementById('diag-td-filter').value || 'any';
+    const count = parseInt(document.getElementById('diag-td-count').value) || 100;
+    const out = `tcpdump: listening on ${intf}, link-type EN10MB (Ethernet), capture size 262144 bytes\nfilter: ${filter}\n\n` +
+      `12:34:56.123456 IP 10.0.1.42.54321 > 8.8.8.8.443: Flags [S], seq 1024893, win 64240, options [...], length 0\n` +
+      `12:34:56.135789 IP 8.8.8.8.443 > 10.0.1.42.54321: Flags [S.], seq 9837421, ack 1024894, win 65535, options [...], length 0\n` +
+      `12:34:56.135890 IP 10.0.1.42.54321 > 8.8.8.8.443: Flags [.], ack 1, win 502, length 0\n` +
+      `... (capture continues for ${count} packets)\n\n${count} packets captured\n${count + 3} packets received by filter\n0 packets dropped by kernel`;
+    document.getElementById('diag-td-out').textContent = out;
+  };
+  c.querySelector('#btn-support').onclick = () => toast('Support snapshot generated (simulated)');
+  return c;
+}, ['System', 'Diagnostics']);
+
+
+// ============== INIT ==============
+window.addEventListener('hashchange', renderApp);
+
+// Boot
+loadState();
+renderSidebar();
+renderApp();
+
+// Show simulator banner once
+if (!sessionStorage.getItem('m270-banner-shown')) {
+  setTimeout(() => {
+    toast('Simulator loaded — practice mode, not a live device');
+    sessionStorage.setItem('m270-banner-shown', '1');
+  }, 400);
+}
+
+</script>
+</body>
+</html>
