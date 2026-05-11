@@ -258,6 +258,10 @@
     <div class="topbar-info-item"><span class="label">Status</span><span class="val"><span class="dot green"></span>Connected</span></div>
   </div>
   <div class="topbar-spacer"></div>
+  <div id="fabric-pill" class="fabric-pill" title="Network Fabric — peer devices on this browser" onclick="location.hash='#dashboard/network-fabric'" style="cursor:pointer; display:flex; align-items:center; gap:6px; padding:5px 12px; background:rgba(0,181,173,0.1); border:1px solid rgba(0,181,173,0.3); border-radius:14px; color:#00b5ad; font-size:11px; font-family:'IBM Plex Mono',monospace; margin-right:12px;">
+    <span class="fabric-dot" style="width:7px; height:7px; border-radius:50%; background:#aaa; transition:all 0.3s;"></span>
+    <span id="fabric-pill-text">Fabric: standalone</span>
+  </div>
   <div class="topbar-banner">⚡ SIMULATOR — practice mode, not a live device</div>
   <div class="topbar-user">
     <div class="avatar">A</div>
@@ -444,6 +448,150 @@ function loadState() {
 
 function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) { console.warn(e); }
+  // Update fabric registration on every state save (interfaces may have changed)
+  if (typeof fabricRegister === 'function') fabricRegister();
+}
+
+// ========================================================================
+// NETWORK FABRIC — inter-simulator communication layer
+// Shared with the Juniper EX2300 sim via localStorage + BroadcastChannel.
+// ========================================================================
+const FABRIC_KEY = 'network-fabric-v1';
+const DEVICE_ID = 'm270-fw';
+const DEVICE_TYPE = 'firebox';
+let fabricChannel = null;
+try { fabricChannel = new BroadcastChannel('network-fabric'); } catch(e) { fabricChannel = null; }
+
+function defaultFabric() {
+  return {
+    devices: {},
+    links: [
+      // Default trunk between the firebox Trusted interface and the switch ge-0/0/0
+      { from: { device: 'm270-fw', interface: 'Trusted' }, to: { device: 'ex2300-sw01', interface: 'ge-0/0/0' }, mode: 'trunk', vlans: ['default'] }
+    ],
+    events: []
+  };
+}
+
+function readFabric() {
+  try {
+    const raw = localStorage.getItem(FABRIC_KEY);
+    if (!raw) return defaultFabric();
+    const f = JSON.parse(raw);
+    if (!f.devices) f.devices = {};
+    if (!f.links) f.links = defaultFabric().links;
+    if (!f.events) f.events = [];
+    // Normalize link shapes — accept either `{a,b,interface}` or `{from,to,if/interface}`
+    f.links = f.links.map(l => {
+      if (l.from && l.to) {
+        return {
+          from: { device: l.from.device, interface: l.from.interface || l.from.if },
+          to:   { device: l.to.device,   interface: l.to.interface   || l.to.if   },
+          mode: l.mode || l.type || 'access',
+          vlans: l.vlans || [],
+          // Keep legacy `a/b` shape so existing reader code keeps working
+          a:    { device: l.from.device, interface: l.from.interface || l.from.if },
+          b:    { device: l.to.device,   interface: l.to.interface   || l.to.if   }
+        };
+      }
+      if (l.a && l.b) {
+        return {
+          ...l,
+          from: { device: l.a.device, interface: l.a.interface || l.a.if },
+          to:   { device: l.b.device, interface: l.b.interface || l.b.if },
+          mode: l.mode || l.type || 'access',
+          vlans: l.vlans || []
+        };
+      }
+      return l;
+    });
+    return f;
+  } catch(e) { return defaultFabric(); }
+}
+
+function writeFabric(f) {
+  try { localStorage.setItem(FABRIC_KEY, JSON.stringify(f)); } catch(e) {}
+}
+
+function getMyFabricInterfaces() {
+  return (state.interfaces || []).map(i => ({
+    name: i.name,
+    zone: i.zone,
+    mac: i.mac,
+    address: i.ip ? `${i.ip}/${i.mask}` : '',
+    enabled: i.enabled !== false,
+    linkUp: i.enabled !== false && (i.link && !i.link.toLowerCase().includes('down')),
+    dhcpServer: i.dhcpServer
+  }));
+}
+
+function fabricRegister() {
+  const f = readFabric();
+  f.devices[DEVICE_ID] = {
+    id: DEVICE_ID,
+    type: DEVICE_TYPE,
+    hostname: state.system.hostname,
+    model: state.system.model || 'M270',
+    firmware: state.system.firmware || state.system.fireware,
+    online: true,
+    lastSeen: Date.now(),
+    interfaces: getMyFabricInterfaces(),
+    fabricInterface: 'Trusted',
+    fabricMac: (state.interfaces || []).find(i => i.name === 'Trusted')?.mac || '00:90:7F:01:23:46'
+  };
+  writeFabric(f);
+  if (fabricChannel) { try { fabricChannel.postMessage({type:'register', deviceId: DEVICE_ID, ts: Date.now()}); } catch(e) {} }
+}
+
+function getPeer() {
+  const f = readFabric();
+  return Object.entries(f.devices || {}).find(([id, d]) => id !== DEVICE_ID && d.online && (Date.now() - (d.lastSeen||0)) < 30000);
+}
+
+function getPeerInfo() {
+  const p = getPeer();
+  return p ? p[1] : null;
+}
+
+function fabricBroadcast(type, payload) {
+  if (fabricChannel) { try { fabricChannel.postMessage({type, deviceId: DEVICE_ID, payload, ts: Date.now()}); } catch(e) {} }
+}
+
+function onFabricChange() {
+  updateFabricPill();
+  // If currently viewing fabric page, re-render
+  if ((location.hash||'').includes('network-fabric')) renderApp();
+}
+
+if (fabricChannel) {
+  fabricChannel.addEventListener('message', e => {
+    if (e.data && e.data.deviceId !== DEVICE_ID) onFabricChange();
+  });
+}
+window.addEventListener('storage', e => {
+  if (e.key === FABRIC_KEY) onFabricChange();
+});
+window.addEventListener('beforeunload', () => {
+  const f = readFabric();
+  if (f.devices[DEVICE_ID]) { f.devices[DEVICE_ID].online = false; writeFabric(f); }
+});
+
+function updateFabricPill() {
+  const pill = document.getElementById('fabric-pill');
+  const dot = pill?.querySelector('.fabric-dot');
+  const text = document.getElementById('fabric-pill-text');
+  if (!pill || !text) return;
+  const f = readFabric();
+  const peers = Object.entries(f.devices || {}).filter(([id, d]) => id !== DEVICE_ID && d.online && (Date.now() - (d.lastSeen||0)) < 30000);
+  if (peers.length > 0) {
+    if (dot) dot.style.background = '#00b5ad';
+    pill.style.background = 'rgba(0,181,173,0.18)';
+    text.textContent = `Fabric: ${peers.length} peer${peers.length === 1 ? '' : 's'}`;
+  } else {
+    if (dot) dot.style.background = '#aaa';
+    pill.style.background = 'rgba(0,181,173,0.10)';
+    text.textContent = 'Fabric: standalone';
+  }
 }
 
 function resetState() {
@@ -481,7 +629,8 @@ const NAV = [
     { id: 'dashboard/firewatch', label: 'FireWatch' },
     { id: 'dashboard/interfaces', label: 'Interfaces' },
     { id: 'dashboard/traffic-monitor', label: 'Traffic Monitor' },
-    { id: 'dashboard/bandwidth', label: 'Bandwidth Meter' }
+    { id: 'dashboard/bandwidth', label: 'Bandwidth Meter' },
+    { id: 'dashboard/network-fabric', label: 'Network Fabric' }
   ]},
   { group: 'System Status', items: [
     { id: 'status/status-report', label: 'Status Report' },
@@ -587,7 +736,7 @@ function renderSidebar() {
   });
 }
 
-const ROUTES = {};
+const ROUTES = {}; window.ROUTES = ROUTES;
 function registerRoute(path, renderFn, breadcrumb) { ROUTES[path] = { render: renderFn, breadcrumb }; }
 
 function renderApp() {
@@ -825,6 +974,144 @@ registerRoute('dashboard/traffic-monitor', placeholderPage('Traffic Monitor', 'L
 registerRoute('dashboard/bandwidth', placeholderPage('Bandwidth Meter', 'Per-interface bandwidth utilization graphs.'), ['Dashboard', 'Bandwidth Meter']);
 
 // ========================================================================
+// NETWORK FABRIC dashboard page — cross-simulator topology and peers
+// ========================================================================
+registerRoute('dashboard/network-fabric', () => {
+  const f = readFabric();
+  const devices = Object.entries(f.devices || {});
+  const peers = devices.filter(([id]) => id !== DEVICE_ID);
+  const me = f.devices[DEVICE_ID];
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-title">Network Fabric</div>
+    <div class="page-subtitle">Inter-simulator topology — devices currently open in this browser communicating via shared localStorage. Open <code>ex2300.html</code> in another tab to see the Juniper switch appear here, and vice-versa.</div>
+
+    <div class="panel">
+      <div class="panel-header">Topology</div>
+      <div class="panel-body">
+        <div style="display:flex; align-items:center; justify-content:center; padding:40px 20px; gap:60px; flex-wrap:wrap;">
+          <div style="text-align:center;">
+            <div style="width:120px; height:80px; background:linear-gradient(180deg, #c0392b 0%, #962d22 100%); border-radius:6px; display:flex; align-items:center; justify-content:center; color:white; font-family:'IBM Plex Mono', monospace; font-weight:600; box-shadow:0 4px 12px rgba(192,57,43,0.3);">M270</div>
+            <div style="margin-top:8px; font-size:12px; color:var(--text-1);"><strong>${state.system.hostname}</strong></div>
+            <div style="font-size:11px; color:var(--text-3); font-family:'IBM Plex Mono', monospace;">Trusted: 10.0.1.1</div>
+            <div style="margin-top:4px; font-size:10px; color:#2ecc71;">● This device</div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="font-size:10px; color:var(--text-3); font-family:'IBM Plex Mono', monospace; text-transform:uppercase; letter-spacing:0.1em;">trunk</div>
+            <div style="display:flex; align-items:center; width:140px; height:3px; background:${peers.length ? 'linear-gradient(90deg, #c0392b 0%, #00b5ad 100%)' : '#444'}; border-radius:2px; position:relative;">
+              ${peers.length ? '<div style="position:absolute; left:50%; top:-3px; width:9px; height:9px; background:#00b5ad; border-radius:50%; transform:translateX(-50%); box-shadow:0 0 8px #00b5ad;"></div>' : ''}
+            </div>
+            <div style="font-size:10px; color:var(--text-3); font-family:'IBM Plex Mono', monospace;">Trusted ↔ ge-0/0/0</div>
+          </div>
+
+          ${peers.length ? peers.map(([id, d]) => `
+            <div style="text-align:center;">
+              <div style="width:120px; height:80px; background:linear-gradient(180deg, #00b5ad 0%, #00807a 100%); border-radius:6px; display:flex; align-items:center; justify-content:center; color:white; font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:13px; box-shadow:0 4px 12px rgba(0,181,173,0.3);">EX2300</div>
+              <div style="margin-top:8px; font-size:12px; color:var(--text-1);"><strong>${escape(d.hostname||id)}</strong></div>
+              <div style="font-size:11px; color:var(--text-3); font-family:'IBM Plex Mono', monospace;">${escape((d.interfaces||[]).find(i=>i.name==='irb.1'||i.address?.startsWith('10.0.1.'))?.address||'10.0.1.2/24')}</div>
+              <div style="margin-top:4px; font-size:10px; color:#00b5ad;">● Connected</div>
+            </div>
+          `).join('') : `
+            <div style="text-align:center; opacity:0.5;">
+              <div style="width:120px; height:80px; background:#2a2a2a; border:2px dashed #555; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--text-3); font-family:'IBM Plex Mono', monospace; font-size:11px; text-align:center; padding:8px;">No peer</div>
+              <div style="margin-top:8px; font-size:11px; color:var(--text-3);">Open ex2300.html in another tab</div>
+            </div>
+          `}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">Connected Devices</div>
+      <div class="panel-body" style="padding:0;">
+        <table class="data-table">
+          <thead><tr><th>Device ID</th><th>Type</th><th>Hostname</th><th>Model</th><th>Status</th><th>Last seen</th><th>Interfaces</th></tr></thead>
+          <tbody>
+            ${devices.map(([id, d]) => {
+              const ago = Math.floor((Date.now() - (d.lastSeen||0))/1000);
+              const online = d.online && ago < 30;
+              return `<tr>
+                <td><code>${escape(id)}</code>${id===DEVICE_ID?' <span class="badge" style="background:#2ecc71;color:white;font-size:10px;padding:2px 6px;border-radius:3px;">this</span>':''}</td>
+                <td>${escape(d.type||'')}</td>
+                <td>${escape(d.hostname||'')}</td>
+                <td>${escape(d.model||'')}</td>
+                <td>${online?'<span style="color:#2ecc71;">● online</span>':'<span style="color:#888;">○ offline</span>'}</td>
+                <td><code>${ago<60?ago+'s ago':Math.floor(ago/60)+'m ago'}</code></td>
+                <td><code style="font-size:11px;">${(d.interfaces||[]).length} interfaces</code></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">Configured Links</div>
+      <div class="panel-body" style="padding:0;">
+        <table class="data-table">
+          <thead><tr><th>From</th><th>To</th><th>Mode</th><th>VLANs</th><th>Status</th></tr></thead>
+          <tbody>
+            ${(f.links||[]).map(l => {
+              const aDev = l.from?.device || l.a?.device;
+              const bDev = l.to?.device   || l.b?.device;
+              const aIf  = l.from?.interface || l.a?.interface;
+              const bIf  = l.to?.interface   || l.b?.interface;
+              const aOn = f.devices[aDev]?.online;
+              const bOn = f.devices[bDev]?.online;
+              const up = aOn && bOn;
+              return `<tr>
+                <td><code>${escape(aDev||'')}:${escape(aIf||'')}</code></td>
+                <td><code>${escape(bDev||'')}:${escape(bIf||'')}</code></td>
+                <td>${escape(l.mode||'access')}</td>
+                <td><code>${(l.vlans||[]).join(', ')}</code></td>
+                <td>${up?'<span style="color:#2ecc71;">● up</span>':'<span style="color:#888;">○ down</span>'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">Peer Interface Details ${peers.length ? '' : '<span style="opacity:0.5;">(no peer connected)</span>'}</div>
+      <div class="panel-body" style="padding:0;">
+        ${peers.length ? peers.map(([id, d]) => `
+          <table class="data-table">
+            <thead><tr><th colspan="6" style="background:#1f1f1f;">Interfaces on ${escape(d.hostname||id)}</th></tr>
+            <tr><th>Name</th><th>Zone/VLAN</th><th>MAC</th><th>Address</th><th>Link</th><th>Notes</th></tr></thead>
+            <tbody>
+              ${(d.interfaces||[]).slice(0,10).map(i => `<tr>
+                <td><code>${escape(i.name)}</code></td>
+                <td>${escape(i.zone || (i.vlans||[]).join(',') || '-')}</td>
+                <td><code style="font-size:11px;">${escape(i.mac||'-')}</code></td>
+                <td><code>${escape(i.address||'-')}</code></td>
+                <td>${i.linkUp ? '<span style="color:#2ecc71;">● up</span>' : '<span style="color:#888;">○ down</span>'}</td>
+                <td>${i.enabled===false?'disabled':''}${i.dhcpServer?' DHCP':''}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        `).join('') : '<div style="padding:20px; color:var(--text-3); text-align:center;">Open the Juniper EX2300 simulator in another browser tab to see its interfaces here.</div>'}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">Fabric Test</div>
+      <div class="panel-body">
+        <p style="margin:0 0 12px; color:var(--text-2); font-size:13px;">Try these to confirm the fabric is live:</p>
+        <ol style="color:var(--text-2); font-size:13px; line-height:1.7;">
+          <li>Open <code>ex2300.html</code> in another tab — the pill in the top-right should turn teal and read "Fabric: 1 peer".</li>
+          <li>From the EX2300, go to <strong>Troubleshoot → Ping</strong> and ping <code>10.0.1.1</code> (this firewall's Trusted IP) — it should succeed.</li>
+          <li>From here, go to <strong>System Status → ARP Table</strong> — the switch's IRB MAC should appear.</li>
+          <li>From the EX2300 CLI, run <code>show lldp neighbors</code> — this Firebox should appear.</li>
+        </ol>
+        <div style="margin-top:14px;"><button class="button-primary" onclick="renderApp()">Refresh fabric view</button></div>
+      </div>
+    </div>
+  `;
+}, ['Dashboard', 'Network Fabric']);
+
+// ========================================================================
 // SYSTEM STATUS PAGES
 // ========================================================================
 registerRoute('status/status-report', () => {
@@ -1016,9 +1303,17 @@ registerRoute('status/routes', () => {
 }, ['System Status', 'Routes']);
 
 registerRoute('status/arp', () => {
+  // Pull live peers from the fabric so we show the EX2300 when it's online
+  const peer = getPeerInfo();
+  const fabricRows = peer ? (peer.interfaces || [])
+    .filter(i => i.address && (i.address.startsWith('10.0.1.') || i.address.startsWith('192.168.')))
+    .map(i => {
+      const ip = i.address.split('/')[0];
+      return `<tr><td class="mono">${escape(ip)}</td><td class="mono">${escape(i.mac||'00:00:00:00:00:00')}</td><td>Trusted</td><td>Dynamic <span style="color:#00b5ad; font-size:10px;">(fabric: ${escape(peer.hostname||'peer')})</span></td></tr>`;
+    }).join('') : '';
   document.getElementById('page').innerHTML = `
     <div class="page-title">ARP Table</div>
-    <div class="page-subtitle">IP-to-MAC address mappings learned by the Firebox</div>
+    <div class="page-subtitle">IP-to-MAC address mappings learned by the Firebox${peer?' — including '+escape(peer.hostname||'peer')+' from fabric':''}</div>
     <div class="panel"><div class="panel-body flush">
       <table class="data">
         <thead><tr><th>IP Address</th><th>MAC Address</th><th>Interface</th><th>Type</th></tr></thead>
@@ -1027,6 +1322,7 @@ registerRoute('status/arp', () => {
           <tr><td class="mono">10.0.1.42</td><td class="mono">A4:5E:60:12:34:56</td><td>Trusted</td><td>Dynamic</td></tr>
           <tr><td class="mono">10.0.1.43</td><td class="mono">7C:5C:F8:AB:CD:EF</td><td>Trusted</td><td>Dynamic</td></tr>
           <tr><td class="mono">10.0.2.5</td><td class="mono">B8:27:EB:99:88:77</td><td>Optional-1</td><td>Dynamic</td></tr>
+          ${fabricRows}
         </tbody>
       </table>
     </div></div>`;
@@ -3183,17 +3479,36 @@ registerRoute('system/diagnostics', () => {
   c.querySelector('#btn-ping').onclick = () => {
     const dst = document.getElementById('diag-ping-dst').value || '8.8.8.8';
     const count = parseInt(document.getElementById('diag-ping-count').value) || 4;
+
+    // Fabric-aware: if pinging a peer's interface IP, succeed with fast RTT
+    const peer = getPeerInfo();
+    const peerIps = peer ? (peer.interfaces||[]).map(i => i.address?.split('/')[0]).filter(Boolean) : [];
+    const isPeer = peerIps.includes(dst);
+    const isInternal = dst.startsWith('10.0.1.') || dst.startsWith('10.0.2.');
+    const isInternet = dst === '8.8.8.8' || dst === '1.1.1.1' || /^\d/.test(dst);
+
     let out = `PING ${dst} (${dst}) 56(84) bytes of data.\n`;
     let times = [];
+    let success = isPeer || isInternal || isInternet;
+
     for (let i = 0; i < count; i++) {
-      const t = (Math.random() * 25 + 8).toFixed(2);
-      times.push(parseFloat(t));
-      out += `64 bytes from ${dst}: icmp_seq=${i+1} ttl=58 time=${t} ms\n`;
+      if (success) {
+        const baseRtt = isPeer ? 0.5 : (isInternal ? 0.3 : 12);
+        const t = (Math.random() * 1.2 + baseRtt).toFixed(2);
+        times.push(parseFloat(t));
+        out += `64 bytes from ${dst}: icmp_seq=${i+1} ttl=${isPeer?64:58} time=${t} ms${isPeer?'  [via fabric → '+(peer.hostname||'peer')+']':''}\n`;
+      } else {
+        out += `From 10.0.1.1 icmp_seq=${i+1} Destination Host Unreachable\n`;
+      }
     }
-    const avg = (times.reduce((a, b) => a + b, 0) / times.length).toFixed(2);
-    const min = Math.min(...times).toFixed(2);
-    const max = Math.max(...times).toFixed(2);
-    out += `\n--- ${dst} ping statistics ---\n${count} packets transmitted, ${count} received, 0% packet loss\nrtt min/avg/max = ${min}/${avg}/${max} ms`;
+    if (times.length) {
+      const avg = (times.reduce((a, b) => a + b, 0) / times.length).toFixed(2);
+      const min = Math.min(...times).toFixed(2);
+      const max = Math.max(...times).toFixed(2);
+      out += `\n--- ${dst} ping statistics ---\n${count} packets transmitted, ${count} received, 0% packet loss\nrtt min/avg/max = ${min}/${avg}/${max} ms`;
+    } else {
+      out += `\n--- ${dst} ping statistics ---\n${count} packets transmitted, 0 received, 100% packet loss`;
+    }
     document.getElementById('diag-ping-out').textContent = out;
   };
   c.querySelector('#btn-tr').onclick = () => {
@@ -3245,7 +3560,18 @@ window.addEventListener('hashchange', renderApp);
 // Boot
 loadState();
 renderSidebar();
+fabricRegister();
 renderApp();
+updateFabricPill();
+
+// Fabric heartbeat
+setInterval(() => { fabricRegister(); updateFabricPill(); }, 5000);
+
+// Re-render dashboard pages periodically so peer/link state stays fresh
+setInterval(() => {
+  const route = (location.hash||'#dashboard/front-panel').slice(1);
+  if (route === 'dashboard/network-fabric' || route === 'status/arp') renderApp();
+}, 8000);
 
 // Show simulator banner once
 if (!sessionStorage.getItem('m270-banner-shown')) {
